@@ -1,15 +1,14 @@
 [package]
-name = "glue"
+name = "glou"
 description = "A GLSL shader viewer, and debugger, hopefully."
 license = "GPL-3.0"
-documentation = "https://docs.rs/glue"
-repository = "https://github.com/Nurrl/glue"
+documentation = "https://docs.rs/glou"
+repository = "https://github.com/Nurrl/glou"
 readme = "README.md"
 keywords = ["glsl", "shadercoding", "livecoding"]
 authors = ["Maya the bee <15341887+Nurrl@users.noreply.github.com>"]
 version = "0.0.0"
 edition = "2021"
-
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

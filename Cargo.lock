@@ -1116,6 +1116,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "glou"
+version = "0.0.0"
+dependencies = [
+ "eframe",
+]
+
+[[package]]
 name = "glow"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1125,13 +1132,6 @@ dependencies = [
  "slotmap",
  "wasm-bindgen",
  "web-sys",
-]
-
-[[package]]
-name = "glue"
-version = "0.0.0"
-dependencies = [
- "eframe",
 ]
 
 [[package]]

@@ -7,7 +7,7 @@ fn main() -> Result<(), eframe::Error> {
     };
 
     eframe::run_native(
-        &format!("glue v{}", env!("CARGO_PKG_VERSION")),
+        &format!("glou v{}", env!("CARGO_PKG_VERSION")),
         options,
         Box::new(|_| Box::<App>::default()),
     )
@@ -19,7 +19,7 @@ struct App {}
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("La glue, ça colle");
+            ui.heading("This is an example text");
         });
     }
 }
