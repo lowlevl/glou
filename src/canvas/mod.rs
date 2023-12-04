@@ -1,7 +1,7 @@
-use std::collections::BTreeMap;
 use std::sync::Arc;
+use std::{collections::BTreeMap, rc::Rc};
 
-use eframe::{egui, egui_glow};
+use eframe::{egui, egui_glow, glow};
 
 mod error;
 pub use error::Error;
@@ -15,13 +15,15 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn tick(&mut self, ctx: &egui::Context) {
+    pub fn tick(&mut self, ctx: &egui::Context, gl: &Rc<glow::Context>) {
         egui::CentralPanel::default()
             .frame(egui::Frame {
                 inner_margin: egui::Margin::ZERO,
                 ..Default::default()
             })
             .show(ctx, |ui| {
+                let program = unsafe { Program::new(gl).unwrap() };
+
                 let painter = egui::Painter::new(
                     ui.ctx().clone(),
                     ui.layer_id(),
@@ -30,8 +32,12 @@ impl Canvas {
 
                 painter.add(egui::PaintCallback {
                     rect: painter.clip_rect(),
-                    callback: Arc::new(egui_glow::CallbackFn::new(|_, painter| unsafe {
-                        Program::new(painter.gl()).unwrap().draw()
+                    callback: Arc::new(egui_glow::CallbackFn::new({
+                        let program = program.clone();
+
+                        move |_, painter| unsafe {
+                            program.draw(painter.gl());
+                        }
                     })),
                 });
             });
