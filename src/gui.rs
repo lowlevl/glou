@@ -75,7 +75,11 @@ impl Gui {
     fn errors(&self, ctx: &egui::Context) {
         egui::TopBottomPanel::bottom("errors").show(ctx, |ui| {
             ui.collapsing("Errors ⚠", |ui| {
-                ui.monospace("There are no errors for now ✔");
+                if self.errors.is_empty() {
+                    ui.monospace("There are no errors for now ✔");
+                } else {
+                    // ...
+                }
             });
         });
     }
