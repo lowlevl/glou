@@ -7,7 +7,7 @@ fn main() -> Result<(), eframe::Error> {
         &format!("glou v{}", env!("CARGO_PKG_VERSION")),
         eframe::NativeOptions {
             viewport: egui::ViewportBuilder {
-                min_inner_size: Some(egui::vec2(320.0, 180.0)),
+                min_inner_size: Some(egui::vec2(320.0, 240.0)),
                 ..Default::default()
             },
             centered: true,
@@ -21,36 +21,47 @@ fn main() -> Result<(), eframe::Error> {
 struct App {
     path: Option<String>,
     uniforms: BTreeMap<String, Vec<f32>>,
+    live_mode: bool,
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::TopBottomPanel::top("bar").show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
-                ui.menu_button("File", |ui| {});
-            });
-        });
+        if ctx.input(|i| i.key_pressed(egui::Key::L)) {
+            self.live_mode = !self.live_mode;
+        }
 
-        egui::SidePanel::left("tools").show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.label("Currently loaded shader:");
-                ui.monospace(self.path.as_deref().unwrap_or("(none)"));
-
-                ui.collapsing("Uniforms", |ui| {
-                    ui.label("Uniforms value and types provided to the shader.");
-                });
-
-                ui.collapsing("Reference", |ui| {
-                    ui.label("Some documentation about the GLSL methods and types.");
+        if !self.live_mode {
+            egui::TopBottomPanel::top("bar").show(ctx, |ui| {
+                egui::menu::bar(ui, |ui| {
+                    ui.menu_button("File", |ui| {});
                 });
             });
-        });
 
-        egui::TopBottomPanel::bottom("errors").show(ctx, |ui| {
-            ui.collapsing("Errors ⚠", |ui| {
-                ui.monospace("There are no errors for now ✔");
+            egui::SidePanel::left("tools").show(ctx, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.label("Currently loaded shader:");
+                    ui.monospace(self.path.as_deref().unwrap_or("(none)"));
+
+                    ui.collapsing("Uniforms", |ui| {
+                        ui.label("Uniforms value and types provided to the shader.");
+                    });
+
+                    ui.collapsing("Reference", |ui| {
+                        ui.label("Some documentation about the GLSL methods and types.");
+                    });
+
+                    ui.separator();
+
+                    ui.label("Press <L> to toggle live mode.");
+                });
             });
-        });
+
+            egui::TopBottomPanel::bottom("errors").show(ctx, |ui| {
+                ui.collapsing("Errors ⚠", |ui| {
+                    ui.monospace("There are no errors for now ✔");
+                });
+            });
+        }
 
         egui::CentralPanel::default()
             .frame(egui::Frame {
