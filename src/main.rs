@@ -1,9 +1,7 @@
-use std::{collections::BTreeMap, path::PathBuf};
-
 use eframe::egui;
 
 mod canvas;
-mod ui;
+mod gui;
 
 fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
@@ -22,20 +20,13 @@ fn main() -> Result<(), eframe::Error> {
 
 #[derive(Debug, Default)]
 struct App {
-    path: Option<PathBuf>,
-    uniforms: BTreeMap<String, Vec<f32>>,
-    live_mode: bool,
+    gui: gui::Gui,
+    canvas: canvas::Canvas,
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        if ctx.input(|i| i.key_pressed(egui::Key::L)) {
-            self.live_mode = !self.live_mode;
-        }
-
-        if !self.live_mode {
-            ui::draw(self, ctx);
-        }
-        canvas::draw(ctx);
+        self.gui.tick(ctx);
+        self.canvas.tick(ctx);
     }
 }

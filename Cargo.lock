@@ -805,7 +805,7 @@ dependencies = [
  "egui",
  "egui-winit",
  "egui_glow",
- "glow 0.12.3",
+ "glow",
  "glutin",
  "glutin-winit",
  "image",
@@ -862,7 +862,7 @@ checksum = "262151f9d57c557c02a40a46f27b9e050a6eb0b006b94dced9c6f4519a04d489"
 dependencies = [
  "bytemuck",
  "egui",
- "glow 0.12.3",
+ "glow",
  "log",
  "memoffset 0.7.1",
  "wasm-bindgen",
@@ -1205,7 +1205,6 @@ name = "glou"
 version = "0.0.0"
 dependencies = [
  "eframe",
- "glow 0.13.0",
  "rfd",
 ]
 
@@ -1214,18 +1213,6 @@ name = "glow"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca0fe580e4b60a8ab24a868bc08e2f03cbcb20d3d676601fa909386713333728"
-dependencies = [
- "js-sys",
- "slotmap",
- "wasm-bindgen",
- "web-sys",
-]
-
-[[package]]
-name = "glow"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "886c2a30b160c4c6fec8f987430c26b526b7988ca71f664e6a699ddf6f9601e4"
 dependencies = [
  "js-sys",
  "slotmap",
