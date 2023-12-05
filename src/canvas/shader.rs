@@ -1,4 +1,5 @@
 use std::{
+    io::Read,
     path::{Path, PathBuf},
     rc::Rc,
     time::{SystemTime, UNIX_EPOCH},
@@ -39,21 +40,13 @@ impl Shader {
 
     pub fn load(&mut self, gl: &glow::Context) -> Result<(), Error> {
         if self.inner.is_none() || std::fs::metadata(&self.path)?.modified()? > self.timestamp {
+            let source = std::fs::read_to_string(&self.path)?;
+
             unsafe {
                 let program = gl.create_program().map_err(Error::Gl)?;
 
                 let vert = Self::shader(gl, glow::VERTEX_SHADER, Self::VERTEX)?;
-                let frag = Self::shader(
-                    gl,
-                    glow::FRAGMENT_SHADER,
-                    r#"
-                    #version 330
-
-                    void main() {
-                        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
-                    }
-                "#,
-                )?;
+                let frag = Self::shader(gl, glow::FRAGMENT_SHADER, &source)?;
 
                 gl.attach_shader(program, vert);
                 gl.attach_shader(program, frag);
@@ -66,12 +59,19 @@ impl Shader {
                 let vertices = gl.create_vertex_array().map_err(Error::Gl)?;
 
                 if let Some((program, vertices)) = self.inner {
+                    tracing::debug!("Freed memory for cached program and vertices");
+
                     gl.delete_program(program);
                     gl.delete_vertex_array(vertices);
                 }
 
                 self.inner = Some((program, vertices));
                 self.timestamp = SystemTime::now();
+
+                tracing::info!(
+                    "Successfully compiled loaded new shader from `{}`",
+                    self.path.display()
+                );
             }
         }
 

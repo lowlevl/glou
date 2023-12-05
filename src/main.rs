@@ -1,9 +1,19 @@
 use eframe::egui;
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 mod canvas;
 mod gui;
 
 fn main() -> Result<(), eframe::Error> {
+    // Set-up the log and traces handler
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(EnvFilter::from_default_env())
+        .init();
+
+    tracing::info!("Starting application using `eframe` backend");
+
+    // Create the frame and context and run the `App`
     eframe::run_native(
         &format!("glou v{}", env!("CARGO_PKG_VERSION")),
         eframe::NativeOptions {
@@ -16,7 +26,9 @@ fn main() -> Result<(), eframe::Error> {
             ..Default::default()
         },
         Box::new(|_| Box::<App>::default()),
-    )
+    )?;
+
+    Ok(())
 }
 
 #[derive(Debug, Default)]
@@ -39,5 +51,8 @@ impl eframe::App for App {
                 .unwrap()
         }
         self.canvas.tick(ctx);
+
+        // Do not await for input to redraw
+        ctx.request_repaint();
     }
 }
