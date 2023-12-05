@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use eframe::{egui, egui_glow};
+use eframe::{egui, egui_glow, glow::HasContext};
 
 mod error;
 pub use error::Error;
@@ -18,29 +18,27 @@ pub struct Canvas {
 impl Canvas {
     pub fn tick(&mut self, ctx: &egui::Context) {
         egui::CentralPanel::default()
-            .frame(egui::Frame {
-                inner_margin: egui::Margin::ZERO,
-                ..Default::default()
-            })
+            .frame(egui::Frame::canvas(&ctx.style()))
             .show(ctx, |ui| {
-                if let Some(program) = &self.shader {
-                    let painter = egui::Painter::new(
-                        ui.ctx().clone(),
-                        ui.layer_id(),
-                        ui.available_rect_before_wrap(),
-                    );
-
-                    painter.add(egui::PaintCallback {
-                        rect: painter.clip_rect(),
-                        callback: Arc::new(egui_glow::CallbackFn::new({
-                            let program = program.clone();
-
-                            move |_, painter| unsafe {
-                                program.draw(painter.gl());
-                            }
-                        })),
-                    });
-                }
+                self.paint(ui);
             });
+    }
+
+    fn paint(&self, ui: &mut egui::Ui) {
+        let (response, painter) =
+            ui.allocate_painter(ui.available_size_before_wrap(), egui::Sense::hover());
+
+        if let Some(shader) = &self.shader {
+            painter.add(egui::PaintCallback {
+                rect: response.rect,
+                callback: Arc::new(egui_glow::CallbackFn::new({
+                    let shader = shader.clone();
+
+                    move |_, painter| unsafe {
+                        shader.draw(painter.gl());
+                    }
+                })),
+            });
+        }
     }
 }
