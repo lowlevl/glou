@@ -1,7 +1,7 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
-use std::{collections::BTreeMap, rc::Rc};
 
-use eframe::{egui, egui_glow, glow};
+use eframe::{egui, egui_glow};
 
 mod error;
 pub use error::Error;

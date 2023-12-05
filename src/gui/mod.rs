@@ -1,10 +1,10 @@
 use eframe::egui;
 
-use crate::canvas::{Canvas, Shader};
+use crate::canvas::{self, Canvas, Shader};
 
 #[derive(Debug, Default)]
 pub struct Gui {
-    pub errors: Vec<()>,
+    pub error: Option<canvas::Error>,
     live: bool,
 }
 
@@ -75,12 +75,13 @@ impl Gui {
 
     fn errors(&self, ctx: &egui::Context) {
         egui::TopBottomPanel::bottom("errors").show(ctx, |ui| {
-            ui.collapsing("Errors ⚠", |ui| {
-                if self.errors.is_empty() {
-                    ui.monospace("There are no errors for now ✔");
-                } else {
-                    // ...
-                }
+            ui.collapsing("Errors ⚠", |ui| match &self.error {
+                None => ui.label(
+                    egui::RichText::new("There are no errors for now ✔")
+                        .italics()
+                        .weak(),
+                ),
+                Some(error) => ui.monospace(error.to_string()),
             });
         });
     }

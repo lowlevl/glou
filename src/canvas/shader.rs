@@ -1,8 +1,7 @@
 use std::{
-    io::Read,
     path::{Path, PathBuf},
     rc::Rc,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{self, SystemTime},
 };
 
 use eframe::glow::{self, HasContext};
@@ -12,7 +11,7 @@ use super::Error;
 #[derive(Debug, Clone)]
 pub struct Shader {
     path: PathBuf,
-    timestamp: SystemTime,
+    timestamp: f64,
     inner: Option<(glow::Program, glow::VertexArray)>,
 }
 
@@ -29,7 +28,7 @@ impl Shader {
     pub fn new(path: PathBuf) -> Self {
         Self {
             path,
-            timestamp: SystemTime::now(),
+            timestamp: 0f64,
             inner: None,
         }
     }
@@ -38,8 +37,19 @@ impl Shader {
         &self.path
     }
 
-    pub fn load(&mut self, gl: &glow::Context) -> Result<(), Error> {
-        if self.inner.is_none() || std::fs::metadata(&self.path)?.modified()? > self.timestamp {
+    pub fn load(&mut self, gl: &glow::Context) -> Result<bool, Error> {
+        if std::fs::metadata(&self.path)?
+            .modified()?
+            .duration_since(time::UNIX_EPOCH)
+            .expect("Time went backwards >.>")
+            .as_secs_f64()
+            > self.timestamp
+        {
+            self.timestamp = SystemTime::now()
+                .duration_since(time::UNIX_EPOCH)
+                .expect("Time went backwards >.>")
+                .as_secs_f64();
+
             let source = std::fs::read_to_string(&self.path)?;
 
             unsafe {
@@ -66,16 +76,17 @@ impl Shader {
                 }
 
                 self.inner = Some((program, vertices));
-                self.timestamp = SystemTime::now();
 
                 tracing::info!(
                     "Successfully compiled loaded new shader from `{}`",
                     self.path.display()
                 );
             }
-        }
 
-        Ok(())
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     unsafe fn shader(gl: &glow::Context, ty: u32, source: &str) -> Result<glow::Shader, Error> {
@@ -87,12 +98,14 @@ impl Shader {
         if gl.get_shader_compile_status(shader) {
             Ok(shader)
         } else {
+            let err = Error::Compile(format!(
+                "Failed to compile shader:\n{}",
+                gl.get_shader_info_log(shader),
+            ));
+
             gl.delete_shader(shader);
 
-            Err(Error::Compile(format!(
-                "Failed to compile shader: {}",
-                gl.get_shader_info_log(shader)
-            )))
+            Err(err)
         }
     }
 

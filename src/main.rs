@@ -42,13 +42,15 @@ impl eframe::App for App {
         self.gui.tick(ctx, &mut self.canvas);
 
         if let Some(shader) = &mut self.canvas.shader {
-            shader
-                .load(
-                    frame
-                        .gl()
-                        .expect("Cannot get reference to the underlying `glow` context"),
-                )
-                .unwrap()
+            match shader.load(
+                frame
+                    .gl()
+                    .expect("Cannot get reference to the underlying `glow` context"),
+            ) {
+                Ok(success) if success => self.gui.error = None,
+                Err(err) => self.gui.error = Some(err),
+                _ => (),
+            }
         }
         self.canvas.tick(ctx);
 
