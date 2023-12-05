@@ -3,7 +3,7 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum Error {
     #[error(transparent)]
-    Io(std::io::Error),
+    Io(#[from] std::io::Error),
 
     #[error("{0}")]
     Gl(String),

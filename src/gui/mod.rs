@@ -1,37 +1,37 @@
-use std::path::PathBuf;
-
 use eframe::egui;
+
+use crate::canvas::{Canvas, Shader};
 
 #[derive(Debug, Default)]
 pub struct Gui {
-    path: Option<PathBuf>,
-    errors: Vec<()>,
+    pub errors: Vec<()>,
     live: bool,
 }
 
 impl Gui {
-    pub fn tick(&mut self, ctx: &egui::Context) {
+    pub fn tick(&mut self, ctx: &egui::Context, canvas: &mut Canvas) {
         if ctx.input(|i| i.key_pressed(egui::Key::L)) {
             self.live = !self.live;
         }
 
         if !self.live {
-            self.toolbar(ctx);
-            self.sidebar(ctx);
+            self.toolbar(ctx, canvas);
+            self.sidebar(ctx, canvas);
             self.errors(ctx);
         }
     }
 
-    fn toolbar(&mut self, ctx: &egui::Context) {
+    fn toolbar(&mut self, ctx: &egui::Context, canvas: &mut Canvas) {
         egui::TopBottomPanel::top("bar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 ui.menu_button("File", |ui| {
                     if ui.button("Load shader..").clicked() {
                         ui.close_menu();
 
-                        self.path = rfd::FileDialog::new()
+                        canvas.shader = rfd::FileDialog::new()
                             .set_title("Select fragment shader")
-                            .pick_file();
+                            .pick_file()
+                            .map(Shader::new);
                     }
 
                     ui.separator();
@@ -46,14 +46,15 @@ impl Gui {
         });
     }
 
-    fn sidebar(&self, ctx: &egui::Context) {
+    fn sidebar(&self, ctx: &egui::Context, canvas: &Canvas) {
         egui::SidePanel::left("sidebar").show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.label("Currently loaded shader:");
                 ui.monospace(
-                    self.path
+                    canvas
+                        .shader
                         .as_ref()
-                        .map(|path| path.display().to_string())
+                        .map(|shader| shader.path().display().to_string())
                         .unwrap_or("(none)".into()),
                 );
 
