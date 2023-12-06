@@ -17,6 +17,7 @@ fn main() -> Result<(), eframe::Error> {
     eframe::run_native(
         &format!("glou v{}", env!("CARGO_PKG_VERSION")),
         eframe::NativeOptions {
+            multisampling: 4,
             renderer: eframe::Renderer::Glow,
             viewport: egui::ViewportBuilder {
                 min_inner_size: Some(egui::vec2(320.0, 240.0)),

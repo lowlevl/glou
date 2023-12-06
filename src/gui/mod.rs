@@ -24,6 +24,10 @@ impl Gui {
     fn toolbar(&mut self, ctx: &egui::Context, canvas: &mut Canvas) {
         egui::TopBottomPanel::top("bar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
+                egui::widgets::global_dark_light_mode_switch(ui);
+
+                ui.separator();
+
                 ui.menu_button("File", |ui| {
                     if ui.button("Load shader..").clicked() {
                         ui.close_menu();
@@ -58,18 +62,20 @@ impl Gui {
                         .unwrap_or("(none)".into()),
                 );
 
-                ui.collapsing("Uniforms", |ui| {
-                    ui.label("Uniforms value and types provided to the shader.");
+                egui::CollapsingHeader::new("⚙ Uniforms")
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        ui.label("Uniforms value and types provided to the shader.");
 
-                    for (name, value) in &canvas.uniforms {
-                        ui.horizontal(|ui| {
-                            ui.strong(*name);
-                            ui.code(format!("{:.02?}", value));
-                        });
-                    }
-                });
+                        for (name, value) in &canvas.uniforms {
+                            ui.horizontal(|ui| {
+                                ui.strong(*name);
+                                ui.code(format!("{:.02?}", value));
+                            });
+                        }
+                    });
 
-                ui.collapsing("Reference", |ui| {
+                ui.collapsing("📖 Reference", |ui| {
                     ui.label("Some documentation about the GLSL methods and types.");
                 });
 
@@ -82,14 +88,16 @@ impl Gui {
 
     fn errors(&self, ctx: &egui::Context) {
         egui::TopBottomPanel::bottom("errors").show(ctx, |ui| {
-            ui.collapsing("Errors ⚠", |ui| match &self.error {
-                None => ui.label(
-                    egui::RichText::new("There are no errors for now ✔")
-                        .italics()
-                        .weak(),
-                ),
-                Some(error) => ui.monospace(error.to_string()),
-            });
+            egui::CollapsingHeader::new("⚠ Errors")
+                .default_open(true)
+                .show(ui, |ui| match &self.error {
+                    None => ui.label(
+                        egui::RichText::new("There are no errors for now ✔")
+                            .italics()
+                            .weak(),
+                    ),
+                    Some(error) => ui.monospace(error.to_string()),
+                });
         });
     }
 }
