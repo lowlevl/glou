@@ -1,4 +1,6 @@
+use core::panic;
 use std::{
+    collections::HashMap,
     path::{Path, PathBuf},
     rc::Rc,
     time::{self, SystemTime},
@@ -20,6 +22,7 @@ impl Shader {
         #version 330 core
 
         const vec2 vertices[4] = vec2[](vec2(-1.0, -1.0), vec2(1.0, -1.0), vec2(-1.0, 1.0), vec2(1.0, 1.0));
+
         void main() {
             gl_Position = vec4(vertices[gl_VertexID], 0.0, 1.0);
         }
@@ -109,9 +112,22 @@ impl Shader {
         }
     }
 
-    pub unsafe fn draw(&self, gl: &Rc<glow::Context>) {
+    pub unsafe fn draw(&self, gl: &Rc<glow::Context>, uniforms: &HashMap<&'static str, Vec<f32>>) {
         if let Some((program, vertices)) = self.inner {
             gl.use_program(Some(program));
+
+            for (name, value) in uniforms {
+                let location = gl.get_uniform_location(program, name);
+
+                match value.as_slice() {
+                    [x] => gl.uniform_1_f32(location.as_ref(), *x),
+                    [x, y] => gl.uniform_2_f32(location.as_ref(), *x, *y),
+                    [x, y, z] => gl.uniform_3_f32(location.as_ref(), *x, *y, *z),
+                    [x, y, z, w] => gl.uniform_4_f32(location.as_ref(), *x, *y, *z, *w),
+                    _ => panic!("Misconfigured uniform"),
+                }
+            }
+
             gl.bind_vertex_array(Some(vertices));
             gl.draw_arrays(glow::TRIANGLE_STRIP, 0, 4);
         }

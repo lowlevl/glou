@@ -60,6 +60,13 @@ impl Gui {
 
                 ui.collapsing("Uniforms", |ui| {
                     ui.label("Uniforms value and types provided to the shader.");
+
+                    for (name, value) in &canvas.uniforms {
+                        ui.horizontal(|ui| {
+                            ui.strong(*name);
+                            ui.code(format!("{:.02?}", value));
+                        });
+                    }
                 });
 
                 ui.collapsing("Reference", |ui| {

@@ -1,15 +1,17 @@
 #version 330
 
+precision highp float;
+
+uniform vec2 u_resolution;
+uniform float u_time;
+
 void main() {
-    if (gl_FragCoord.x < 300.0 && gl_FragCoord.y < 300.0) {
-        gl_FragColor = vec4(0.0, 0.0, 1.0, 1.0);
-    }
+    vec2 uv = gl_FragCoord.xy / u_resolution;
 
-    if (gl_FragCoord.x > 200.0 && gl_FragCoord.y > 200.0) {
-        gl_FragColor = vec4(0.0, 1.0, 0.0, 1.0);
-    }
+    vec3 color = vec3(uv.x, uv.y, abs(cos(u_time)));
 
-    if (gl_FragCoord.x == gl_FragCoord.y) {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-    }
+    if (int(uv.x + uv.y) == 1)
+        color = vec3(1.0);
+
+    gl_FragColor = vec4(color, 1.0);
 }
