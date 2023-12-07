@@ -4,11 +4,7 @@ uniform float u_time;
 
 void main() {
     vec2 uv = gl_FragCoord.xy / u_resolution;
-    float aspect = u_resolution.x / u_resolution.y;
-    uv.x *= aspect;
-
     vec2 mouse = u_mouse / u_resolution;
-    mouse.x *= aspect;
 
     vec3 color = vec3(uv.x, uv.y, abs(cos(u_time)));
 
