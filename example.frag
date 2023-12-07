@@ -15,6 +15,9 @@ void main() {
     if (uv.x + uv.y >= 0.95 && uv.x + uv.y <= 1.05 )
         color = vec3(1.0);
 
+    if (uv.x - uv.y >= -0.05 && uv.x - uv.y <= 0.05 )
+        color = vec3(1.0);
+
     if (length(uv - mouse) <= 0.05)
         color = vec3(0.0);
 

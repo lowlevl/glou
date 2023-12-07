@@ -40,22 +40,22 @@ struct App {
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        let gl = frame
+            .gl()
+            .expect("Cannot get reference to the underlying `glow` context");
+
         self.gui.tick(ctx, &mut self.canvas);
 
         if let Some(shader) = &mut self.canvas.shader {
-            match shader.load(
-                frame
-                    .gl()
-                    .expect("Cannot get reference to the underlying `glow` context"),
-            ) {
+            match shader.load(gl) {
                 Ok(success) if success => self.gui.error = None,
                 Err(err) => self.gui.error = Some(err),
                 _ => (),
             }
         }
-        self.canvas.tick(ctx);
+        self.canvas.tick(ctx, gl);
 
-        // Do not await for input to redraw
+        // Immediately request a redraw of the screen
         ctx.request_repaint();
     }
 }

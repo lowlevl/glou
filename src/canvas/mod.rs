@@ -1,6 +1,9 @@
-use std::{collections::HashMap, sync::Arc, time};
+use std::{collections::HashMap, rc::Rc, sync::Arc, time};
 
-use eframe::{egui, egui_glow};
+use eframe::{
+    egui, egui_glow,
+    glow::{self, HasContext},
+};
 
 mod error;
 pub use error::Error;
@@ -16,27 +19,24 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn tick(&mut self, ctx: &egui::Context) {
+    pub fn tick(&mut self, ctx: &egui::Context, gl: &Rc<glow::Context>) {
         egui::CentralPanel::default()
             .frame(egui::Frame::dark_canvas(&ctx.style()))
             .show(ctx, |ui| {
-                self.paint(ui);
+                self.paint(ui, gl);
             });
     }
 
-    fn paint(&mut self, ui: &mut egui::Ui) {
-        let (response, painter) =
-            ui.allocate_painter(ui.available_size_before_wrap(), egui::Sense::hover());
+    fn paint(&mut self, ui: &mut egui::Ui, gl: &Rc<glow::Context>) {
+        let (response, painter) = ui.allocate_painter(ui.available_size(), egui::Sense::hover());
+        let rect = painter.clip_rect();
 
-        self.uniforms.insert(
-            "u_resolution",
-            vec![response.rect.width(), response.rect.height()],
-        );
+        // Set up uniform values
+        self.uniforms
+            .insert("u_resolution", vec![rect.width(), rect.height()]);
         if let Some(pos) = response.hover_pos() {
-            self.uniforms.insert(
-                "u_mouse",
-                vec![pos.x - response.rect.left(), response.rect.bottom() - pos.y],
-            );
+            self.uniforms
+                .insert("u_mouse", vec![pos.x - rect.left(), rect.bottom() - pos.y]);
         }
         self.uniforms.insert(
             "u_time",
@@ -48,14 +48,90 @@ impl Canvas {
         );
 
         if let Some(shader) = &self.shader {
-            painter.add(egui::PaintCallback {
-                rect: response.rect,
-                callback: Arc::new(egui_glow::CallbackFn::new({
-                    let shader = shader.clone();
-                    let uniforms = self.uniforms.clone();
+            // Draw shader to right-sized texture
+            let (texture, buffer) = unsafe {
+                let texture = gl.create_texture().expect("Unable to create texture");
 
+                gl.bind_texture(glow::TEXTURE_2D, Some(texture));
+                gl.tex_image_2d(
+                    glow::TEXTURE_2D,
+                    0,
+                    glow::RGB as i32,
+                    rect.width() as i32,
+                    rect.height() as i32,
+                    0,
+                    glow::RGB,
+                    glow::UNSIGNED_BYTE,
+                    None,
+                );
+
+                let buffer = gl
+                    .create_framebuffer()
+                    .expect("Unable to create frame buffer");
+
+                gl.bind_framebuffer(glow::FRAMEBUFFER, Some(buffer));
+                gl.framebuffer_texture_2d(
+                    glow::FRAMEBUFFER,
+                    glow::COLOR_ATTACHMENT0,
+                    glow::TEXTURE_2D,
+                    Some(texture),
+                    0,
+                );
+                gl.draw_buffer(glow::COLOR_ATTACHMENT0);
+
+                assert!(
+                    gl.check_framebuffer_status(glow::FRAMEBUFFER) == glow::FRAMEBUFFER_COMPLETE
+                );
+
+                shader.render(gl, &self.uniforms);
+
+                gl.bind_framebuffer(glow::FRAMEBUFFER, None);
+                gl.bind_texture(glow::TEXTURE_2D, None);
+
+                (texture, buffer)
+            };
+
+            // Display texture when required
+            painter.add(egui::PaintCallback {
+                rect,
+                callback: Arc::new(egui_glow::CallbackFn::new({
                     move |_, painter| unsafe {
-                        shader.draw(painter.gl(), &uniforms);
+                        painter
+                            .gl()
+                            .bind_framebuffer(glow::READ_FRAMEBUFFER, Some(buffer));
+                        painter.gl().framebuffer_texture_2d(
+                            glow::READ_FRAMEBUFFER,
+                            glow::COLOR_ATTACHMENT0,
+                            glow::TEXTURE_2D,
+                            Some(texture),
+                            0,
+                        );
+
+                        assert!(
+                            painter
+                                .gl()
+                                .check_framebuffer_status(glow::READ_FRAMEBUFFER)
+                                == glow::FRAMEBUFFER_COMPLETE
+                        );
+
+                        painter.gl().blit_framebuffer(
+                            // Invert Y axis using window size ?
+                            0,
+                            0,
+                            rect.width() as i32,
+                            rect.height() as i32,
+                            rect.left() as i32,
+                            rect.bottom() as i32,
+                            rect.right() as i32,
+                            rect.top() as i32,
+                            glow::COLOR_BUFFER_BIT,
+                            glow::LINEAR,
+                        );
+
+                        painter.gl().bind_framebuffer(glow::READ_FRAMEBUFFER, None);
+
+                        painter.gl().delete_framebuffer(buffer);
+                        painter.gl().delete_texture(texture);
                     }
                 })),
             });

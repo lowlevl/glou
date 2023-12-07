@@ -112,7 +112,11 @@ impl Shader {
         }
     }
 
-    pub unsafe fn draw(&self, gl: &Rc<glow::Context>, uniforms: &HashMap<&'static str, Vec<f32>>) {
+    pub unsafe fn render(
+        &self,
+        gl: &Rc<glow::Context>,
+        uniforms: &HashMap<&'static str, Vec<f32>>,
+    ) {
         if let Some((program, vertices)) = self.inner {
             gl.use_program(Some(program));
 
@@ -130,6 +134,7 @@ impl Shader {
 
             gl.bind_vertex_array(Some(vertices));
             gl.draw_arrays(glow::TRIANGLE_STRIP, 0, 4);
+            // gl.bind_vertex_array(None);
         }
     }
 }
