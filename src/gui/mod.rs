@@ -1,20 +1,33 @@
+use std::time;
+
 use eframe::egui;
 
 use crate::canvas::{self, Canvas, Shader};
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Gui {
+    live_mode: bool,
+    rendered_at: time::Instant,
     pub error: Option<canvas::Error>,
-    live: bool,
+}
+
+impl Default for Gui {
+    fn default() -> Self {
+        Self {
+            live_mode: Default::default(),
+            rendered_at: time::Instant::now(),
+            error: Default::default(),
+        }
+    }
 }
 
 impl Gui {
     pub fn tick(&mut self, ctx: &egui::Context, canvas: &mut Canvas) {
         if ctx.input(|i| i.key_pressed(egui::Key::L)) {
-            self.live = !self.live;
+            self.live_mode = !self.live_mode;
         }
 
-        if !self.live {
+        if !self.live_mode {
             self.toolbar(ctx, canvas);
             self.sidebar(ctx, canvas);
             self.errors(ctx);
@@ -33,7 +46,7 @@ impl Gui {
                         ui.close_menu();
 
                         canvas.shader = rfd::FileDialog::new()
-                            .set_title("Select fragment shader")
+                            .set_title("Select fragment shader to load")
                             .pick_file()
                             .map(Shader::new);
                     }
@@ -56,38 +69,50 @@ impl Gui {
         });
     }
 
-    fn sidebar(&self, ctx: &egui::Context, canvas: &Canvas) {
+    fn sidebar(&mut self, ctx: &egui::Context, canvas: &Canvas) {
         egui::SidePanel::left("sidebar").show(ctx, |ui| {
-            ui.vertical_centered(|ui| {
-                ui.label("Currently loaded shader:");
-                ui.monospace(
-                    canvas
-                        .shader
-                        .as_ref()
-                        .map(|shader| shader.path().display().to_string())
-                        .unwrap_or("(none)".into()),
-                );
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.label("Loaded shader:");
+                    ui.monospace(
+                        canvas
+                            .shader
+                            .as_ref()
+                            .map(|shader| shader.path().display().to_string())
+                            .unwrap_or("(none)".into()),
+                    );
 
-                egui::CollapsingHeader::new("⚙ Uniforms")
-                    .default_open(true)
-                    .show(ui, |ui| {
-                        ui.label("Uniforms value and types provided to the shader.");
+                    ui.horizontal(|ui| {
+                        ui.label("Frame time:");
+                        ui.monospace(format!(
+                            "{:.02}ms",
+                            self.rendered_at.elapsed().as_micros() as f32 / 1000.0
+                        ));
 
-                        for (name, value) in &canvas.uniforms {
-                            ui.horizontal(|ui| {
-                                ui.strong(*name);
-                                ui.code(format!("{:.02?}", value));
-                            });
-                        }
+                        self.rendered_at = time::Instant::now();
                     });
 
-                ui.collapsing("📖 Reference", |ui| {
-                    ui.label("Some documentation about the GLSL methods and types.");
+                    egui::CollapsingHeader::new("⚙ Uniforms")
+                        .default_open(true)
+                        .show(ui, |ui| {
+                            ui.label("Uniform values sent to the fragment shader.");
+
+                            for (name, value) in &canvas.uniforms {
+                                ui.horizontal(|ui| {
+                                    ui.strong(*name);
+                                    ui.code(format!("{:.02?}", value));
+                                });
+                            }
+                        });
+
+                    ui.collapsing("📖 Reference", |ui| {
+                        ui.label("Some documentation about the GLSL methods and types.");
+                    });
+
+                    ui.separator();
+
+                    ui.label("Press <L> to toggle live mode.");
                 });
-
-                ui.separator();
-
-                ui.label("Press <L> to toggle live mode.");
             });
         });
     }
