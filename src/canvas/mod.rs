@@ -95,7 +95,7 @@ impl Canvas {
             painter.add(egui::PaintCallback {
                 rect,
                 callback: Arc::new(egui_glow::CallbackFn::new({
-                    move |_, painter| unsafe {
+                    move |info, painter| unsafe {
                         painter
                             .gl()
                             .bind_framebuffer(glow::READ_FRAMEBUFFER, Some(buffer));
@@ -106,6 +106,7 @@ impl Canvas {
                             Some(texture),
                             0,
                         );
+                        painter.gl().read_buffer(glow::COLOR_ATTACHMENT0);
 
                         assert!(
                             painter
@@ -114,18 +115,19 @@ impl Canvas {
                                 == glow::FRAMEBUFFER_COMPLETE
                         );
 
+                        let viewport = info.viewport_in_pixels();
                         painter.gl().blit_framebuffer(
                             // Invert Y axis using window size ?
                             0,
                             0,
-                            rect.width() as i32,
-                            rect.height() as i32,
-                            rect.left() as i32,
-                            rect.bottom() as i32,
-                            rect.right() as i32,
-                            rect.top() as i32,
+                            viewport.width_px,
+                            viewport.height_px,
+                            viewport.left_px,
+                            viewport.from_bottom_px,
+                            viewport.left_px + viewport.width_px,
+                            viewport.from_bottom_px + viewport.height_px,
                             glow::COLOR_BUFFER_BIT,
-                            glow::LINEAR,
+                            glow::NEAREST,
                         );
 
                         painter.gl().bind_framebuffer(glow::READ_FRAMEBUFFER, None);
