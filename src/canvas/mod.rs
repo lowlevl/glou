@@ -21,7 +21,7 @@ pub struct Canvas {
 impl Canvas {
     pub fn tick(&mut self, ctx: &egui::Context, gl: &Rc<glow::Context>) {
         egui::CentralPanel::default()
-            .frame(egui::Frame::dark_canvas(&ctx.style()))
+            .frame(egui::Frame::canvas(&ctx.style()))
             .show(ctx, |ui| {
                 self.paint(ui, gl);
             });

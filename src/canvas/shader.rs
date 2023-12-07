@@ -134,7 +134,7 @@ impl Shader {
 
             gl.bind_vertex_array(Some(vertices));
             gl.draw_arrays(glow::TRIANGLE_STRIP, 0, 4);
-            // gl.bind_vertex_array(None);
+            gl.bind_vertex_array(None);
         }
     }
 }

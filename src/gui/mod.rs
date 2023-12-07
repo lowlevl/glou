@@ -38,6 +38,12 @@ impl Gui {
                             .map(Shader::new);
                     }
 
+                    if ui.button("Clear shader..").clicked() {
+                        ui.close_menu();
+
+                        canvas.shader = None;
+                    }
+
                     ui.separator();
 
                     if ui.button("Quit").clicked() {
