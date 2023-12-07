@@ -49,7 +49,11 @@ impl eframe::App for App {
         if let Some(shader) = &mut self.canvas.shader {
             match shader.load(gl) {
                 Ok(success) if success => self.gui.error = None,
-                Err(err) => self.gui.error = Some(err),
+                Err(err) => {
+                    tracing::warn!("An error occured while compiling shader: {err}");
+
+                    self.gui.error = Some(err);
+                }
                 _ => (),
             }
         }

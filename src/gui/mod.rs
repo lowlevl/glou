@@ -102,7 +102,15 @@ impl Gui {
                             .italics()
                             .weak(),
                     ),
-                    Some(error) => ui.monospace(error.to_string()),
+                    Some(error) => {
+                        let error = error.to_string();
+                        let error = error
+                            .strip_suffix("\r\n")
+                            .or(error.strip_suffix('\n'))
+                            .unwrap_or(&error);
+
+                        ui.monospace(error)
+                    }
                 });
         });
     }

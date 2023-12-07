@@ -48,6 +48,11 @@ impl Shader {
             .as_secs_f64()
             > self.timestamp
         {
+            tracing::info!(
+                "Source file at `{}` was updated, compiling shader..",
+                self.path.display()
+            );
+
             self.timestamp = SystemTime::now()
                 .duration_since(time::UNIX_EPOCH)
                 .expect("Time went backwards >.>")
