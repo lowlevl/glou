@@ -31,12 +31,22 @@ impl Canvas {
         let (response, painter) = ui.allocate_painter(ui.available_size(), egui::Sense::hover());
         let rect = painter.clip_rect();
 
-        // Set up uniform values
-        self.uniforms
-            .insert("u_resolution", vec![rect.width(), rect.height()]);
+        // Setup uniforms from various parameters
+        self.uniforms.insert(
+            "u_resolution",
+            vec![
+                painter.round_to_pixel(rect.width()),
+                painter.round_to_pixel(rect.height()),
+            ],
+        );
         if let Some(pos) = response.hover_pos() {
-            self.uniforms
-                .insert("u_mouse", vec![pos.x - rect.left(), rect.bottom() - pos.y]);
+            self.uniforms.insert(
+                "u_mouse",
+                vec![
+                    painter.round_to_pixel(pos.x - rect.left()),
+                    painter.round_to_pixel(rect.bottom() - pos.y),
+                ],
+            );
         }
         self.uniforms.insert(
             "u_time",
@@ -57,8 +67,8 @@ impl Canvas {
                     glow::TEXTURE_2D,
                     0,
                     glow::RGB as i32,
-                    rect.width() as i32,
-                    rect.height() as i32,
+                    painter.round_to_pixel(rect.width()).max(1.0) as i32,
+                    painter.round_to_pixel(rect.height()).max(1.0) as i32,
                     0,
                     glow::RGB,
                     glow::UNSIGNED_BYTE,
@@ -91,7 +101,7 @@ impl Canvas {
                 (texture, buffer)
             };
 
-            // Display texture when required
+            // Finally paint the texture on the screen
             painter.add(egui::PaintCallback {
                 rect,
                 callback: Arc::new(egui_glow::CallbackFn::new({
@@ -117,7 +127,6 @@ impl Canvas {
 
                         let viewport = info.viewport_in_pixels();
                         painter.gl().blit_framebuffer(
-                            // Invert Y axis using window size ?
                             0,
                             0,
                             viewport.width_px,
