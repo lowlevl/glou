@@ -3,6 +3,14 @@
 
 A GLSL shader viewer, and debugger, hopefully.
 
-## Todo
+## What to do
 
-- [ ] Check for memory leaks in unsafe code
+- [x] Realtime `uniform` values display.
+- [x] Shader compilation error panel.
+- [x] A _Live mode_ that hides the UI to make shader fullscreen.
+- [ ] Support for different `uniform` naming conventions (`u_time`, `iTime`, etc.)
+- [ ] Include some GLSL methods documentation and typing, with a simple description and a plot of the function.
+- [ ] Provide a way to debug in-GPU variables through some hack or method.
+- [ ] Add a screenshot/screencapture panel to allow generating exportable images and videos with the specified size. (Even larger than the current screen for example)
+- [ ] Support for NewTek NDI to enable sharing shader renders to compliant softwares.
+- [ ] Find & fix the memory leaks in the canvas OpenGL code.
