@@ -59,46 +59,17 @@ impl Canvas {
 
         if let Some(shader) = &self.shader {
             // Draw shader to right-sized texture
-            let (texture, buffer) = unsafe {
-                let texture = gl.create_texture().expect("Unable to create texture");
-
-                gl.bind_texture(glow::TEXTURE_2D, Some(texture));
-                gl.tex_image_2d(
-                    glow::TEXTURE_2D,
-                    0,
-                    glow::RGB as i32,
-                    painter.round_to_pixel(rect.width()).max(1.0) as i32,
-                    painter.round_to_pixel(rect.height()).max(1.0) as i32,
-                    0,
-                    glow::RGB,
-                    glow::UNSIGNED_BYTE,
-                    None,
-                );
-
-                let buffer = gl
-                    .create_framebuffer()
-                    .expect("Unable to create frame buffer");
-
-                gl.bind_framebuffer(glow::FRAMEBUFFER, Some(buffer));
-                gl.framebuffer_texture_2d(
-                    glow::FRAMEBUFFER,
-                    glow::COLOR_ATTACHMENT0,
-                    glow::TEXTURE_2D,
-                    Some(texture),
-                    0,
-                );
-                gl.draw_buffer(glow::COLOR_ATTACHMENT0);
-
-                assert!(
-                    gl.check_framebuffer_status(glow::FRAMEBUFFER) == glow::FRAMEBUFFER_COMPLETE
-                );
-
-                shader.render(gl, &self.uniforms);
-
-                gl.bind_framebuffer(glow::FRAMEBUFFER, None);
-                gl.bind_texture(glow::TEXTURE_2D, None);
-
-                (texture, buffer)
+            let texture = unsafe {
+                shader
+                    .render_to_texture(
+                        gl,
+                        &self.uniforms,
+                        egui::vec2(
+                            painter.round_to_pixel(rect.width()).max(1.0),
+                            painter.round_to_pixel(rect.height()).max(1.0),
+                        ),
+                    )
+                    .expect("Unable to render shader")
             };
 
             // Finally paint the texture on the screen
@@ -106,6 +77,11 @@ impl Canvas {
                 rect,
                 callback: Arc::new(egui_glow::CallbackFn::new({
                     move |info, painter| unsafe {
+                        let buffer = painter
+                            .gl()
+                            .create_framebuffer()
+                            .expect("Unable to create frame buffer");
+
                         painter
                             .gl()
                             .bind_framebuffer(glow::READ_FRAMEBUFFER, Some(buffer));

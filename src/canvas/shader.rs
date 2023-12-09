@@ -6,7 +6,10 @@ use std::{
     time::{self, SystemTime},
 };
 
-use eframe::glow::{self, HasContext};
+use eframe::{
+    egui,
+    glow::{self, HasContext},
+};
 
 use super::Error;
 
@@ -115,6 +118,51 @@ impl Shader {
 
             Err(err)
         }
+    }
+
+    pub unsafe fn render_to_texture(
+        &self,
+        gl: &Rc<glow::Context>,
+        uniforms: &HashMap<&'static str, Vec<f32>>,
+        size: egui::Vec2,
+    ) -> Result<glow::Texture, Error> {
+        let texture = gl.create_texture().map_err(Error::Gl)?;
+
+        gl.bind_texture(glow::TEXTURE_2D, Some(texture));
+        gl.tex_image_2d(
+            glow::TEXTURE_2D,
+            0,
+            glow::RGB as i32,
+            size.x as i32,
+            size.y as i32,
+            0,
+            glow::RGB,
+            glow::UNSIGNED_BYTE,
+            None,
+        );
+
+        let buffer = gl.create_framebuffer().map_err(Error::Gl)?;
+
+        gl.bind_framebuffer(glow::FRAMEBUFFER, Some(buffer));
+        gl.framebuffer_texture_2d(
+            glow::FRAMEBUFFER,
+            glow::COLOR_ATTACHMENT0,
+            glow::TEXTURE_2D,
+            Some(texture),
+            0,
+        );
+        gl.draw_buffer(glow::COLOR_ATTACHMENT0);
+
+        assert!(gl.check_framebuffer_status(glow::FRAMEBUFFER) == glow::FRAMEBUFFER_COMPLETE);
+
+        self.render(gl, uniforms);
+
+        gl.bind_framebuffer(glow::FRAMEBUFFER, None);
+        gl.bind_texture(glow::TEXTURE_2D, None);
+
+        gl.delete_framebuffer(buffer);
+
+        Ok(texture)
     }
 
     pub unsafe fn render(
