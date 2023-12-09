@@ -132,11 +132,11 @@ impl Shader {
         gl.tex_image_2d(
             glow::TEXTURE_2D,
             0,
-            glow::RGB as i32,
+            glow::RGBA as i32,
             size.x as i32,
             size.y as i32,
             0,
-            glow::RGB,
+            glow::RGBA,
             glow::UNSIGNED_BYTE,
             None,
         );
