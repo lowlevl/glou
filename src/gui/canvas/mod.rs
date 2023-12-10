@@ -1,4 +1,4 @@
-use std::{rc::Rc, sync::Arc, time};
+use std::{rc::Rc, sync::Arc};
 
 use eframe::{
     egui, egui_glow,
@@ -14,7 +14,6 @@ pub use uniforms::{UniformStyle, Uniforms};
 #[derive(Debug, Default)]
 pub struct Canvas {
     pub shader: Option<Shader>,
-    pub time: Option<time::Instant>,
     pub uniforms: Uniforms,
 }
 
