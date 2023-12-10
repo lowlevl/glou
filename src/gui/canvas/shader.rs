@@ -1,6 +1,4 @@
-use core::panic;
 use std::{
-    collections::HashMap,
     path::{Path, PathBuf},
     rc::Rc,
     time::{self, SystemTime},
@@ -12,6 +10,8 @@ use eframe::{
 };
 
 use crate::gui::Error;
+
+use super::Uniforms;
 
 #[derive(Debug, Clone)]
 pub struct Shader {
@@ -120,74 +120,64 @@ impl Shader {
         }
     }
 
-    pub unsafe fn render_to_texture(
-        &self,
-        gl: &Rc<glow::Context>,
-        uniforms: &HashMap<&'static str, Vec<f32>>,
-        size: egui::Vec2,
-    ) -> Result<glow::Texture, Error> {
-        let texture = gl.create_texture().map_err(Error::Gl)?;
-
-        gl.bind_texture(glow::TEXTURE_2D, Some(texture));
-        gl.tex_image_2d(
-            glow::TEXTURE_2D,
-            0,
-            glow::RGBA as i32,
-            size.x as i32,
-            size.y as i32,
-            0,
-            glow::RGBA,
-            glow::UNSIGNED_BYTE,
-            None,
-        );
-
-        let buffer = gl.create_framebuffer().map_err(Error::Gl)?;
-
-        gl.bind_framebuffer(glow::FRAMEBUFFER, Some(buffer));
-        gl.framebuffer_texture_2d(
-            glow::FRAMEBUFFER,
-            glow::COLOR_ATTACHMENT0,
-            glow::TEXTURE_2D,
-            Some(texture),
-            0,
-        );
-        gl.draw_buffer(glow::COLOR_ATTACHMENT0);
-
-        assert!(gl.check_framebuffer_status(glow::FRAMEBUFFER) == glow::FRAMEBUFFER_COMPLETE);
-
-        self.render(gl, uniforms);
-
-        gl.bind_framebuffer(glow::FRAMEBUFFER, None);
-        gl.bind_texture(glow::TEXTURE_2D, None);
-
-        gl.delete_framebuffer(buffer);
-
-        Ok(texture)
-    }
-
-    pub unsafe fn render(
-        &self,
-        gl: &Rc<glow::Context>,
-        uniforms: &HashMap<&'static str, Vec<f32>>,
-    ) {
+    pub unsafe fn render(&self, gl: &Rc<glow::Context>, uniforms: &Uniforms) {
         if let Some((program, vertices)) = self.inner {
             gl.use_program(Some(program));
 
-            for (name, value) in uniforms {
-                let location = gl.get_uniform_location(program, name);
-
-                match value.as_slice() {
-                    [x] => gl.uniform_1_f32(location.as_ref(), *x),
-                    [x, y] => gl.uniform_2_f32(location.as_ref(), *x, *y),
-                    [x, y, z] => gl.uniform_3_f32(location.as_ref(), *x, *y, *z),
-                    [x, y, z, w] => gl.uniform_4_f32(location.as_ref(), *x, *y, *z, *w),
-                    _ => panic!("Misconfigured uniform"),
-                }
-            }
+            uniforms.apply(gl, program);
 
             gl.bind_vertex_array(Some(vertices));
             gl.draw_arrays(glow::TRIANGLE_STRIP, 0, 4);
             gl.bind_vertex_array(None);
+        }
+    }
+
+    pub unsafe fn render_to_texture(
+        &self,
+        gl: &Rc<glow::Context>,
+        uniforms: &Uniforms,
+        size: egui::Vec2,
+    ) -> Result<Option<glow::Texture>, Error> {
+        if size.x < 1.0 || size.y < 1.0 {
+            Ok(None)
+        } else {
+            let texture = gl.create_texture().map_err(Error::Gl)?;
+
+            gl.bind_texture(glow::TEXTURE_2D, Some(texture));
+            gl.tex_image_2d(
+                glow::TEXTURE_2D,
+                0,
+                glow::RGBA as i32,
+                size.x as i32,
+                size.y as i32,
+                0,
+                glow::RGBA,
+                glow::UNSIGNED_BYTE,
+                None,
+            );
+
+            let buffer = gl.create_framebuffer().map_err(Error::Gl)?;
+
+            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(buffer));
+            gl.framebuffer_texture_2d(
+                glow::FRAMEBUFFER,
+                glow::COLOR_ATTACHMENT0,
+                glow::TEXTURE_2D,
+                Some(texture),
+                0,
+            );
+            gl.draw_buffer(glow::COLOR_ATTACHMENT0);
+
+            assert!(gl.check_framebuffer_status(glow::FRAMEBUFFER) == glow::FRAMEBUFFER_COMPLETE);
+
+            self.render(gl, uniforms);
+
+            gl.bind_framebuffer(glow::FRAMEBUFFER, None);
+            gl.bind_texture(glow::TEXTURE_2D, None);
+
+            gl.delete_framebuffer(buffer);
+
+            Ok(Some(texture))
         }
     }
 }

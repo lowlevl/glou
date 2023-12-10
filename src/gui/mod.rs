@@ -116,9 +116,9 @@ impl Gui {
                         .show(ui, |ui| {
                             ui.label("Uniform values sent to the fragment shader.");
 
-                            for (name, value) in &self.canvas.uniforms {
+                            for (name, value) in self.canvas.uniforms.to_iter() {
                                 ui.horizontal(|ui| {
-                                    ui.strong(*name);
+                                    ui.strong(name);
                                     ui.code(format!("{:.02?}", value));
                                 });
                             }
