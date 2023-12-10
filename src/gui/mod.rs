@@ -125,14 +125,20 @@ impl Gui {
                                         style.as_ref(),
                                     );
                                 }
-                            });
 
-                            for (name, value) in self.canvas.uniforms.to_iter() {
-                                ui.horizontal(|ui| {
-                                    ui.strong(name);
-                                    ui.code(format!("{:.02?}", value));
-                                });
-                            }
+                                for (name, value) in self.canvas.uniforms.to_iter() {
+                                    ui.horizontal(|ui| {
+                                        ui.strong(name);
+                                        ui.code(format!("{:.02?}", value));
+                                    });
+                                }
+
+                                ui.separator();
+
+                                if ui.button("⏳ Reset time").clicked() {
+                                    self.canvas.uniforms.reset_time();
+                                }
+                            });
                         });
 
                     ui.collapsing("📖 Reference", |ui| {

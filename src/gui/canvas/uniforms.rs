@@ -72,6 +72,10 @@ impl Uniforms {
         .into_iter()
     }
 
+    pub fn reset_time(&mut self) {
+        self.epoch = None;
+    }
+
     pub unsafe fn apply(&self, gl: &Rc<glow::Context>, program: glow::Program) {
         for (name, value) in self.to_iter() {
             let location = gl.get_uniform_location(program, &name);
