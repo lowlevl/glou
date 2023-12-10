@@ -8,7 +8,8 @@ A GLSL shader viewer, and debugger, hopefully.
 - [x] Realtime `uniform` values display.
 - [x] Shader compilation error panel.
 - [x] A _Live mode_ that hides the UI to make shader fullscreen.
-- [ ] Support for different `uniform` naming conventions (`u_time`, `iTime`, etc.)
+- [x] Support for different `uniform` naming conventions. (`u_time`, `iTime`, etc.)
+- [ ] Provide a way to reset the `time` uniform at will.
 - [ ] Include some GLSL methods documentation and typing, with a simple description and a plot of the function.
 - [ ] Provide a way to debug in-GPU variables through some hack or method.
 - [ ] Add a screenshot/screencapture panel to allow generating exportable images and videos with the specified size. (Even larger than the current screen for example)

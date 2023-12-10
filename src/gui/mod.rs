@@ -6,7 +6,8 @@ mod error;
 pub use error::Error;
 
 mod canvas;
-use canvas::{Canvas, Shader};
+use canvas::{Canvas, Shader, UniformStyle};
+use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub struct Gui {
@@ -115,6 +116,16 @@ impl Gui {
                         .default_open(true)
                         .show(ui, |ui| {
                             ui.label("Uniform values sent to the fragment shader.");
+
+                            ui.vertical_centered_justified(|ui| {
+                                for style in UniformStyle::iter() {
+                                    ui.selectable_value(
+                                        &mut self.canvas.uniforms.style,
+                                        style,
+                                        style.as_ref(),
+                                    );
+                                }
+                            });
 
                             for (name, value) in self.canvas.uniforms.to_iter() {
                                 ui.horizontal(|ui| {

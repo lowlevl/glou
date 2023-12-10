@@ -4,12 +4,19 @@ use eframe::{
     egui,
     glow::{self, HasContext},
 };
+use strum::{AsRefStr, EnumIter};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, PartialEq, Clone, Copy, EnumIter, AsRefStr)]
 pub enum UniformStyle {
     #[default]
+    #[strum(serialize = "Classic (u_<name>)")]
     Classic,
+
+    #[strum(serialize = "Shader Toy (i<Name>)")]
     ShaderToy,
+
+    #[strum(serialize = "GLSL Sandbox (<name>)")]
+    GlslSandbox,
 }
 
 impl UniformStyle {
@@ -23,13 +30,14 @@ impl UniformStyle {
                 chars.next().unwrap_or('?').to_ascii_uppercase(),
                 chars.as_str()
             ),
+            Self::GlslSandbox => name.to_string(),
         }
     }
 }
 
 #[derive(Debug, Default)]
 pub struct Uniforms {
-    style: UniformStyle,
+    pub style: UniformStyle,
     epoch: Option<time::Instant>,
 
     time: f32,

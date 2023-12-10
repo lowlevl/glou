@@ -20,3 +20,4 @@ thiserror = "1.0.50"
 
 eframe = "0.24.1"
 rfd = "0.12.1"
+strum = { version = "0.25.0", features = ["derive"] }

@@ -9,7 +9,7 @@ mod shader;
 pub use shader::Shader;
 
 mod uniforms;
-pub use uniforms::Uniforms;
+pub use uniforms::{UniformStyle, Uniforms};
 
 #[derive(Debug, Default)]
 pub struct Canvas {
