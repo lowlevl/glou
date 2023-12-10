@@ -5,9 +5,6 @@ use eframe::{
     glow::{self, HasContext},
 };
 
-mod error;
-pub use error::Error;
-
 mod shader;
 pub use shader::Shader;
 

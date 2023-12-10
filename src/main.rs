@@ -1,7 +1,6 @@
 use eframe::egui;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-mod canvas;
 mod gui;
 
 fn main() -> Result<(), eframe::Error> {
@@ -35,7 +34,6 @@ fn main() -> Result<(), eframe::Error> {
 #[derive(Debug, Default)]
 struct App {
     gui: gui::Gui,
-    canvas: canvas::Canvas,
 }
 
 impl eframe::App for App {
@@ -44,20 +42,7 @@ impl eframe::App for App {
             .gl()
             .expect("Cannot get reference to the underlying `glow` context");
 
-        self.gui.tick(ctx, &mut self.canvas);
-
-        if let Some(shader) = &mut self.canvas.shader {
-            match shader.load(gl) {
-                Ok(success) if success => self.gui.error = None,
-                Err(err) => {
-                    tracing::warn!("An error occured while compiling shader: {err}");
-
-                    self.gui.error = Some(err);
-                }
-                _ => (),
-            }
-        }
-        self.canvas.tick(ctx, gl);
+        self.gui.tick(ctx, gl);
 
         // Immediately request a redraw of the screen
         ctx.request_repaint();

@@ -1,14 +1,19 @@
-use std::time;
+use std::{rc::Rc, time};
 
-use eframe::egui;
+use eframe::{egui, glow};
 
-use crate::canvas::{self, Canvas, Shader};
+mod error;
+pub use error::Error;
+
+mod canvas;
+use canvas::{Canvas, Shader};
 
 #[derive(Debug)]
 pub struct Gui {
     live_mode: bool,
     rendered_at: time::Instant,
-    pub error: Option<canvas::Error>,
+    canvas: Canvas,
+    errors: Option<Error>,
 }
 
 impl Default for Gui {
@@ -16,25 +21,39 @@ impl Default for Gui {
         Self {
             live_mode: Default::default(),
             rendered_at: time::Instant::now(),
-            error: Default::default(),
+            canvas: Default::default(),
+            errors: Default::default(),
         }
     }
 }
 
 impl Gui {
-    pub fn tick(&mut self, ctx: &egui::Context, canvas: &mut Canvas) {
+    pub fn tick(&mut self, ctx: &egui::Context, gl: &Rc<glow::Context>) {
         if ctx.input(|i| i.key_pressed(egui::Key::L)) {
             self.live_mode = !self.live_mode;
         }
 
         if !self.live_mode {
-            self.toolbar(ctx, canvas);
-            self.sidebar(ctx, canvas);
+            self.toolbar(ctx);
+            self.sidebar(ctx);
             self.errors(ctx);
         }
+
+        if let Some(shader) = &mut self.canvas.shader {
+            match shader.load(gl) {
+                Ok(success) if success => self.errors = None,
+                Err(err) => {
+                    tracing::warn!("An error occured while compiling shader: {err}");
+
+                    self.errors = Some(err);
+                }
+                _ => (),
+            }
+        }
+        self.canvas.tick(ctx, gl);
     }
 
-    fn toolbar(&mut self, ctx: &egui::Context, canvas: &mut Canvas) {
+    fn toolbar(&mut self, ctx: &egui::Context) {
         egui::TopBottomPanel::top("bar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 egui::widgets::global_dark_light_mode_switch(ui);
@@ -45,8 +64,8 @@ impl Gui {
                     if ui.button("Load shader..").clicked() {
                         ui.close_menu();
 
-                        canvas.shader = rfd::FileDialog::new()
-                            .set_title("Select fragment shader to load")
+                        self.canvas.shader = rfd::FileDialog::new()
+                            .set_title("Select fragment shader")
                             .pick_file()
                             .map(Shader::new);
                     }
@@ -54,7 +73,7 @@ impl Gui {
                     if ui.button("Clear shader..").clicked() {
                         ui.close_menu();
 
-                        canvas.shader = None;
+                        self.canvas.shader = None;
                     }
 
                     ui.separator();
@@ -69,13 +88,13 @@ impl Gui {
         });
     }
 
-    fn sidebar(&mut self, ctx: &egui::Context, canvas: &Canvas) {
+    fn sidebar(&mut self, ctx: &egui::Context) {
         egui::SidePanel::left("sidebar").show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.vertical_centered(|ui| {
                     ui.label("Loaded shader:");
                     ui.monospace(
-                        canvas
+                        self.canvas
                             .shader
                             .as_ref()
                             .map(|shader| shader.path().display().to_string())
@@ -97,7 +116,7 @@ impl Gui {
                         .show(ui, |ui| {
                             ui.label("Uniform values sent to the fragment shader.");
 
-                            for (name, value) in &canvas.uniforms {
+                            for (name, value) in &self.canvas.uniforms {
                                 ui.horizontal(|ui| {
                                     ui.strong(*name);
                                     ui.code(format!("{:.02?}", value));
@@ -121,7 +140,7 @@ impl Gui {
         egui::TopBottomPanel::bottom("errors").show(ctx, |ui| {
             egui::CollapsingHeader::new("⚠ Errors")
                 .default_open(true)
-                .show(ui, |ui| match &self.error {
+                .show(ui, |ui| match &self.errors {
                     None => ui.label(
                         egui::RichText::new("There are no errors for now ✔")
                             .italics()

@@ -11,7 +11,7 @@ use eframe::{
     glow::{self, HasContext},
 };
 
-use super::Error;
+use crate::gui::Error;
 
 #[derive(Debug, Clone)]
 pub struct Shader {
