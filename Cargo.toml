@@ -16,8 +16,8 @@ edition = "2021"
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 
+strum = { version = "0.25.0", features = ["derive"] }
 thiserror = "1.0.50"
 
 eframe = "0.24.1"
 rfd = "0.12.1"
-strum = { version = "0.25.0", features = ["derive"] }

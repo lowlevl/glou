@@ -3,6 +3,9 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 mod gui;
 
+mod error;
+pub use error::Error;
+
 fn main() -> Result<(), eframe::Error> {
     // Set-up the log and traces handler
     tracing_subscriber::registry()
