@@ -14,4 +14,5 @@ A GLSL shader viewer, and debugger, hopefully.
 - [ ] Provide a way to debug in-GPU variables through some hack or method.
 - [ ] Add a screenshot/screencapture panel to allow generating exportable images and videos with the specified size. (Even larger than the current screen for example)
 - [ ] Support for NewTek NDI to enable sharing shader renders to compliant softwares.
-- [ ] Find & fix the memory leaks in the canvas OpenGL code.
+- [x] Find & fix the memory leaks in the canvas OpenGL code.
+- [ ] Investigate `rfd` prompt memory increases

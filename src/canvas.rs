@@ -5,36 +5,49 @@ use eframe::{
     glow::{self, HasContext},
 };
 
-pub struct Canvas(Option<glow::Texture>, egui::Painter, egui::Rect);
+use crate::{guard, AllocGuard};
+
+pub struct Canvas(Option<AllocGuard<glow::Texture>>, egui::Painter, egui::Rect);
 
 impl Canvas {
     pub fn new(
-        texture: Option<glow::Texture>,
+        texture: Option<AllocGuard<glow::Texture>>,
         painter: egui::Painter,
         viewport: egui::Rect,
     ) -> Self {
         Self(texture, painter, viewport)
     }
 
-    pub fn paint(self) {
-        if let Some(texture) = self.0 {
+    pub fn paint(mut self) {
+        if let Some(texture) = self.0.take() {
+            // This removes the guard, but we'll re-add it after thread boudary
+            let texture = AllocGuard::into_inner(texture);
+
             self.1.add(egui::PaintCallback {
                 rect: self.2,
                 callback: Arc::new(egui_glow::CallbackFn::new({
                     move |info, painter| unsafe {
-                        let buffer = painter
-                            .gl()
-                            .create_framebuffer()
-                            .expect("Unable to create frame buffer");
+                        let gl = painter.gl();
+
+                        // Readded allocation guard to ensure the resource is deleted after use
+                        let texture =
+                            guard!(gl, texture, move |texture| gl.delete_texture(texture));
+
+                        let buffer = guard!(
+                            gl,
+                            gl.create_framebuffer()
+                                .expect("Unable to create frame buffer"),
+                            move |buffer| gl.delete_framebuffer(buffer)
+                        );
 
                         painter
                             .gl()
-                            .bind_framebuffer(glow::READ_FRAMEBUFFER, Some(buffer));
+                            .bind_framebuffer(glow::READ_FRAMEBUFFER, Some(*buffer));
                         painter.gl().framebuffer_texture_2d(
                             glow::READ_FRAMEBUFFER,
                             glow::COLOR_ATTACHMENT0,
                             glow::TEXTURE_2D,
-                            Some(texture),
+                            Some(*texture),
                             0,
                         );
                         painter.gl().read_buffer(glow::COLOR_ATTACHMENT0);
@@ -61,7 +74,6 @@ impl Canvas {
                         );
 
                         painter.gl().bind_framebuffer(glow::READ_FRAMEBUFFER, None);
-                        painter.gl().delete_framebuffer(buffer);
                     }
                 })),
             });

@@ -10,13 +10,13 @@ use eframe::{
 };
 
 use super::Uniforms;
-use crate::Error;
+use crate::{guard, AllocGuard, Error};
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Shader {
     path: PathBuf,
     rebuilt_at: f64,
-    inner: Option<(glow::Program, glow::VertexArray)>,
+    inner: Option<(AllocGuard<glow::Program>, AllocGuard<glow::VertexArray>)>,
 }
 
 impl Shader {
@@ -42,7 +42,7 @@ impl Shader {
         &self.path
     }
 
-    pub fn rebuild(&mut self, gl: &glow::Context) -> Result<bool, Error> {
+    pub fn rebuild(&mut self, gl: &Rc<glow::Context>) -> Result<bool, Error> {
         if std::fs::metadata(&self.path)?
             .modified()?
             .duration_since(time::UNIX_EPOCH)
@@ -63,29 +63,26 @@ impl Shader {
             let source = std::fs::read_to_string(&self.path)?;
 
             unsafe {
-                let program = gl.create_program().map_err(Error::Gl)?;
+                let program = guard!(
+                    gl,
+                    gl.create_program().map_err(Error::Gl)?,
+                    move |program| gl.delete_program(program)
+                );
 
                 let vert = Self::shader(gl, glow::VERTEX_SHADER, Self::VERTEX)?;
                 let frag = Self::shader(gl, glow::FRAGMENT_SHADER, &source)?;
 
-                gl.attach_shader(program, vert);
-                gl.attach_shader(program, frag);
-                gl.link_program(program);
-                gl.detach_shader(program, vert);
-                gl.detach_shader(program, frag);
-                gl.delete_shader(vert);
-                gl.delete_shader(frag);
+                gl.attach_shader(*program, *vert);
+                gl.attach_shader(*program, *frag);
+                gl.link_program(*program);
+                gl.detach_shader(*program, *vert);
+                gl.detach_shader(*program, *frag);
 
-                let vertices = gl.create_vertex_array().map_err(Error::Gl)?;
-
-                if let Some((program, vertices)) = self.inner {
-                    tracing::trace!(
-                        "Freed memory for cached program {program:?} and vertices {vertices:?}"
-                    );
-
-                    gl.delete_program(program);
-                    gl.delete_vertex_array(vertices);
-                }
+                let vertices = guard!(
+                    gl,
+                    gl.create_vertex_array().map_err(Error::Gl)?,
+                    move |vertices| gl.delete_vertex_array(vertices)
+                );
 
                 self.inner = Some((program, vertices));
 
@@ -101,33 +98,37 @@ impl Shader {
         }
     }
 
-    unsafe fn shader(gl: &glow::Context, ty: u32, source: &str) -> Result<glow::Shader, Error> {
-        let shader = gl.create_shader(ty).map_err(Error::Gl)?;
+    unsafe fn shader(
+        gl: &Rc<glow::Context>,
+        ty: u32,
+        source: &str,
+    ) -> Result<AllocGuard<glow::Shader>, Error> {
+        let shader = guard!(
+            gl,
+            gl.create_shader(ty).map_err(Error::Gl)?,
+            move |shader| gl.delete_shader(shader)
+        );
 
-        gl.shader_source(shader, source);
-        gl.compile_shader(shader);
+        gl.shader_source(*shader, source);
+        gl.compile_shader(*shader);
 
-        if gl.get_shader_compile_status(shader) {
+        if gl.get_shader_compile_status(*shader) {
             Ok(shader)
         } else {
-            let err = Error::Compile(format!(
+            Err(Error::Compile(format!(
                 "Failed to compile shader:\n{}",
-                gl.get_shader_info_log(shader),
-            ));
-
-            gl.delete_shader(shader);
-
-            Err(err)
+                gl.get_shader_info_log(*shader),
+            )))
         }
     }
 
     unsafe fn render(&self, gl: &Rc<glow::Context>, uniforms: &Uniforms) {
-        if let Some((program, vertices)) = self.inner {
-            gl.use_program(Some(program));
+        if let Some((program, vertices)) = &self.inner {
+            gl.use_program(Some(**program));
 
-            uniforms.apply(gl, program);
+            uniforms.apply(gl, **program);
 
-            gl.bind_vertex_array(Some(vertices));
+            gl.bind_vertex_array(Some(**vertices));
             gl.draw_arrays(glow::TRIANGLE_STRIP, 0, 4);
             gl.bind_vertex_array(None);
         }
@@ -138,13 +139,17 @@ impl Shader {
         gl: &Rc<glow::Context>,
         uniforms: &Uniforms,
         size: egui::Vec2,
-    ) -> Result<Option<glow::Texture>, Error> {
+    ) -> Result<Option<AllocGuard<glow::Texture>>, Error> {
         if size.x < 1.0 || size.y < 1.0 {
             Ok(None)
         } else {
-            let texture = gl.create_texture().map_err(Error::Gl)?;
+            let texture = guard!(
+                gl,
+                gl.create_texture().map_err(Error::Gl)?,
+                move |texture| gl.delete_texture(texture)
+            );
 
-            gl.bind_texture(glow::TEXTURE_2D, Some(texture));
+            gl.bind_texture(glow::TEXTURE_2D, Some(*texture));
             gl.tex_image_2d(
                 glow::TEXTURE_2D,
                 0,
@@ -157,14 +162,18 @@ impl Shader {
                 None,
             );
 
-            let buffer = gl.create_framebuffer().map_err(Error::Gl)?;
+            let buffer = guard!(
+                gl,
+                gl.create_framebuffer().map_err(Error::Gl)?,
+                move |buffer| gl.delete_framebuffer(buffer)
+            );
 
-            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(buffer));
+            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(*buffer));
             gl.framebuffer_texture_2d(
                 glow::FRAMEBUFFER,
                 glow::COLOR_ATTACHMENT0,
                 glow::TEXTURE_2D,
-                Some(texture),
+                Some(*texture),
                 0,
             );
             gl.draw_buffer(glow::COLOR_ATTACHMENT0);
@@ -175,8 +184,6 @@ impl Shader {
 
             gl.bind_framebuffer(glow::FRAMEBUFFER, None);
             gl.bind_texture(glow::TEXTURE_2D, None);
-
-            gl.delete_framebuffer(buffer);
 
             Ok(Some(texture))
         }

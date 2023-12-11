@@ -1,9 +1,6 @@
 use std::rc::Rc;
 
-use eframe::{
-    egui,
-    glow::{self, HasContext},
-};
+use eframe::{egui, glow};
 
 mod shader;
 pub use shader::Shader;
@@ -17,7 +14,6 @@ use crate::canvas::Canvas;
 pub struct Renderer {
     pub uniforms: Uniforms,
     pub shader: Option<Shader>,
-    pub texture: Option<glow::Texture>,
 
     pub size: egui::Vec2,
     pub resizable: bool,
@@ -45,21 +41,17 @@ impl Renderer {
                 .map(|pos| painter.round_pos_to_pixels(pos)),
         );
 
+        let mut texture = None;
+
         if let Some(shader) = &self.shader {
             unsafe {
-                if let Some(texture) = self.texture {
-                    tracing::trace!("Freed memory for cached texture {texture:?}");
-
-                    gl.delete_texture(texture);
-                }
-
                 // Draw shader to right-sized texture
-                self.texture = shader
+                texture = shader
                     .render_to_texture(gl, &self.uniforms, viewport.size())
                     .expect("Unable to render shader");
             };
         }
 
-        Canvas::new(self.texture, painter, viewport)
+        Canvas::new(texture, painter, viewport)
     }
 }

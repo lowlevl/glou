@@ -10,6 +10,19 @@ use renderer::{Renderer, Shader, UniformStyle};
 mod error;
 use error::Error;
 
+type AllocGuard<T> = scopeguard::ScopeGuard<T, Box<dyn FnOnce(T)>>;
+
+#[macro_export]
+macro_rules! guard {
+    ($gl:ident, $alloc:expr, $delete:expr) => {
+        ::scopeguard::guard($alloc, {
+            let $gl = $gl.clone();
+
+            Box::new($delete) as Box<dyn FnOnce(_)>
+        })
+    };
+}
+
 fn main() -> Result<(), eframe::Error> {
     // Set-up the log and traces handler
     tracing_subscriber::registry()
