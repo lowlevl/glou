@@ -40,17 +40,36 @@ fn main() -> Result<(), eframe::Error> {
 #[derive(Debug, Default)]
 struct App {
     gui: gui::Gui,
+    canvas: Canvas,
 }
 
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+        // Immediately request a redraw of the screen
+        ctx.request_repaint();
+
         let gl = frame
             .gl()
             .expect("Cannot get reference to the underlying `glow` context");
 
-        self.gui.show(ctx, gl);
+        self.gui.show(ctx, &mut self.canvas);
 
-        // Immediately request a redraw of the screen
-        ctx.request_repaint();
+        if let Some(shader) = &mut self.canvas.shader {
+            match shader.rebuild(gl) {
+                Ok(success) if success => self.gui.clear_error(),
+                Err(err) => {
+                    tracing::warn!("An error occured while compiling shader: {err}");
+
+                    self.gui.set_error(err);
+                }
+                _ => (),
+            }
+        }
+
+        egui::CentralPanel::default()
+            .frame(egui::Frame::canvas(&ctx.style()))
+            .show(ctx, |ui| {
+                self.canvas.paint(ui, gl);
+            });
     }
 }

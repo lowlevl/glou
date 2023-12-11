@@ -15,7 +15,7 @@ use crate::Error;
 #[derive(Debug, Clone)]
 pub struct Shader {
     path: PathBuf,
-    timestamp: f64,
+    rebuilt_at: f64,
     inner: Option<(glow::Program, glow::VertexArray)>,
 }
 
@@ -33,7 +33,7 @@ impl Shader {
     pub fn new(path: PathBuf) -> Self {
         Self {
             path,
-            timestamp: 0f64,
+            rebuilt_at: 0f64,
             inner: None,
         }
     }
@@ -48,14 +48,14 @@ impl Shader {
             .duration_since(time::UNIX_EPOCH)
             .expect("Time went backwards >.>")
             .as_secs_f64()
-            > self.timestamp
+            > self.rebuilt_at
         {
             tracing::info!(
                 "Source file at `{}` was updated, compiling shader..",
                 self.path.display()
             );
 
-            self.timestamp = SystemTime::now()
+            self.rebuilt_at = SystemTime::now()
                 .duration_since(time::UNIX_EPOCH)
                 .expect("Time went backwards >.>")
                 .as_secs_f64();
