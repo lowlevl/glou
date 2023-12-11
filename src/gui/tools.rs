@@ -1,25 +1,13 @@
-use std::time;
-
 use eframe::egui;
 use strum::IntoEnumIterator;
 
-use super::{Canvas, UniformStyle};
+use crate::{Canvas, UniformStyle};
 
-#[derive(Debug)]
-pub struct Tools {
-    last_render: time::Instant,
-}
-
-impl Default for Tools {
-    fn default() -> Self {
-        Self {
-            last_render: time::Instant::now(),
-        }
-    }
-}
+#[derive(Debug, Default)]
+pub struct Tools;
 
 impl Tools {
-    pub fn tick(&mut self, ctx: &egui::Context, canvas: &mut Canvas) {
+    pub fn show(&mut self, ctx: &egui::Context, canvas: &mut Canvas) {
         egui::SidePanel::left("sidebar").show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.vertical_centered(|ui| {
@@ -31,16 +19,6 @@ impl Tools {
                             .map(|shader| shader.path().display().to_string())
                             .unwrap_or("(none)".into()),
                     );
-
-                    ui.horizontal(|ui| {
-                        ui.label("Frame time:");
-                        ui.monospace(format!(
-                            "{:.02}ms",
-                            self.last_render.elapsed().as_micros() as f32 / 1000.0
-                        ));
-
-                        self.last_render = time::Instant::now();
-                    });
 
                     egui::CollapsingHeader::new("⚙ Uniforms")
                         .default_open(true)
@@ -70,6 +48,50 @@ impl Tools {
                                 }
                             });
                         });
+
+                    // ui.collapsing("⛶ Renderer", |ui| {
+                    //     ui.label("Export the shader to various formats and sinks.");
+
+                    //     ui.add_enabled_ui(canvas.shader.is_some(), |ui| {
+                    //         ui.vertical_centered_justified(|ui| {
+                    //             ui.horizontal(|ui| {
+                    //                 ui.strong("Export size");
+                    //                 ui.add(
+                    //                     egui::DragValue::new(&mut self.output_size.0)
+                    //                         .clamp_range(1..=3840)
+                    //                         .suffix(" px"),
+                    //                 );
+                    //                 ui.label("x");
+                    //                 ui.add(
+                    //                     egui::DragValue::new(&mut self.output_size.1)
+                    //                         .clamp_range(1..=2160)
+                    //                         .suffix(" px"),
+                    //                 );
+                    //             });
+                    //         });
+
+                    //         ui.separator();
+
+                    //         ui.vertical_centered_justified(|ui| {
+                    //             if ui.button("Capture screenshot").clicked() {}
+                    //         });
+
+                    //         ui.separator();
+
+                    //         ui.label("Newtek NDI®");
+
+                    //         ui.vertical_centered_justified(|ui| {
+                    //             ui.text_edit_singleline(&mut String::new());
+
+                    //             if ui
+                    //                 .button(if self.ndi { "⏹ Stop" } else { "▶ Start" })
+                    //                 .clicked()
+                    //             {
+                    //                 self.ndi = !self.ndi;
+                    //             }
+                    //         });
+                    //     });
+                    // });
 
                     ui.collapsing("📖 Reference", |ui| {
                         ui.label("Some documentation about the GLSL methods and types.");

@@ -9,9 +9,8 @@ use eframe::{
     glow::{self, HasContext},
 };
 
-use crate::gui::Error;
-
 use super::Uniforms;
+use crate::Error;
 
 #[derive(Debug, Clone)]
 pub struct Shader {
@@ -43,7 +42,7 @@ impl Shader {
         &self.path
     }
 
-    pub fn load(&mut self, gl: &glow::Context) -> Result<bool, Error> {
+    pub fn rebuild(&mut self, gl: &glow::Context) -> Result<bool, Error> {
         if std::fs::metadata(&self.path)?
             .modified()?
             .duration_since(time::UNIX_EPOCH)
@@ -120,7 +119,7 @@ impl Shader {
         }
     }
 
-    pub unsafe fn render(&self, gl: &Rc<glow::Context>, uniforms: &Uniforms) {
+    unsafe fn render(&self, gl: &Rc<glow::Context>, uniforms: &Uniforms) {
         if let Some((program, vertices)) = self.inner {
             gl.use_program(Some(program));
 

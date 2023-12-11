@@ -3,8 +3,11 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 mod gui;
 
+mod canvas;
+use canvas::{Canvas, Shader, UniformStyle};
+
 mod error;
-pub use error::Error;
+use error::Error;
 
 fn main() -> Result<(), eframe::Error> {
     // Set-up the log and traces handler
@@ -45,7 +48,7 @@ impl eframe::App for App {
             .gl()
             .expect("Cannot get reference to the underlying `glow` context");
 
-        self.gui.tick(ctx, gl);
+        self.gui.show(ctx, gl);
 
         // Immediately request a redraw of the screen
         ctx.request_repaint();

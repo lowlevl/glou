@@ -1,12 +1,12 @@
 use eframe::egui;
 
-use super::{Canvas, Shader};
+use crate::{Canvas, Shader};
 
 #[derive(Debug, Default)]
 pub struct Bar;
 
 impl Bar {
-    pub fn tick(&self, ctx: &egui::Context, canvas: &mut Canvas) {
+    pub fn show(&self, ctx: &egui::Context, canvas: &mut Canvas) {
         egui::TopBottomPanel::top("bar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 egui::widgets::global_dark_light_mode_switch(ui);

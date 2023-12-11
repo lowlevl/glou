@@ -8,7 +8,7 @@ pub struct Errors {
 }
 
 impl Errors {
-    pub fn tick(&self, ctx: &egui::Context) {
+    pub fn show(&self, ctx: &egui::Context) {
         egui::TopBottomPanel::bottom("errors").show(ctx, |ui| {
             egui::CollapsingHeader::new("⚠ Errors")
                 .default_open(true)
@@ -31,7 +31,7 @@ impl Errors {
         });
     }
 
-    pub fn show(&mut self, error: Error) {
+    pub fn set(&mut self, error: Error) {
         self.inner = Some(error);
     }
 

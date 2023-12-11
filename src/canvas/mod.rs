@@ -18,15 +18,7 @@ pub struct Canvas {
 }
 
 impl Canvas {
-    pub fn tick(&mut self, ctx: &egui::Context, gl: &Rc<glow::Context>) {
-        egui::CentralPanel::default()
-            .frame(egui::Frame::canvas(&ctx.style()))
-            .show(ctx, |ui| {
-                self.paint(ui, gl);
-            });
-    }
-
-    fn paint(&mut self, ui: &mut egui::Ui, gl: &Rc<glow::Context>) {
+    pub fn paint(&mut self, ui: &mut egui::Ui, gl: &Rc<glow::Context>) {
         let (response, painter) = ui.allocate_painter(ui.available_size(), egui::Sense::hover());
         let viewport = egui::Rect {
             min: painter.round_pos_to_pixels(painter.clip_rect().min),
