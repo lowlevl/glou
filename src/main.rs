@@ -1,10 +1,11 @@
 use eframe::egui;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
+mod canvas;
 mod gui;
 
-mod canvas;
-use canvas::{Canvas, Shader, UniformStyle};
+mod renderer;
+use renderer::{Renderer, Shader, UniformStyle};
 
 mod error;
 use error::Error;
@@ -40,7 +41,7 @@ fn main() -> Result<(), eframe::Error> {
 #[derive(Debug, Default)]
 struct App {
     gui: gui::Gui,
-    canvas: Canvas,
+    renderer: renderer::Renderer,
 }
 
 impl eframe::App for App {
@@ -52,9 +53,9 @@ impl eframe::App for App {
             .gl()
             .expect("Cannot get reference to the underlying `glow` context");
 
-        self.gui.show(ctx, &mut self.canvas);
+        self.gui.show(ctx, &mut self.renderer);
 
-        if let Some(shader) = &mut self.canvas.shader {
+        if let Some(shader) = &mut self.renderer.shader {
             match shader.rebuild(gl) {
                 Ok(success) if success => self.gui.clear_error(),
                 Err(err) => {
@@ -69,7 +70,7 @@ impl eframe::App for App {
         egui::CentralPanel::default()
             .frame(egui::Frame::canvas(&ctx.style()))
             .show(ctx, |ui| {
-                self.canvas.paint(ui, gl);
+                self.renderer.render_to_canvas(gl, ui).paint();
             });
     }
 }

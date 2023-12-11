@@ -1,12 +1,12 @@
 use eframe::egui;
 
-use crate::{Canvas, Shader};
+use crate::{Renderer, Shader};
 
 #[derive(Debug, Default)]
 pub struct Bar;
 
 impl Bar {
-    pub fn show(&self, ctx: &egui::Context, canvas: &mut Canvas) {
+    pub fn show(&self, ctx: &egui::Context, renderer: &mut Renderer) {
         egui::TopBottomPanel::top("bar").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 egui::widgets::global_dark_light_mode_switch(ui);
@@ -17,7 +17,7 @@ impl Bar {
                     if ui.button("Load shader..").clicked() {
                         ui.close_menu();
 
-                        canvas.shader = rfd::FileDialog::new()
+                        renderer.shader = rfd::FileDialog::new()
                             .set_title("Select fragment shader")
                             .pick_file()
                             .map(Shader::new);
@@ -26,7 +26,7 @@ impl Bar {
                     if ui.button("Clear shader..").clicked() {
                         ui.close_menu();
 
-                        canvas.shader = None;
+                        renderer.shader = None;
                     }
 
                     ui.separator();

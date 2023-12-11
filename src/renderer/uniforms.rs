@@ -57,7 +57,7 @@ impl Uniforms {
             self.mouse = egui::vec2(mouse.x - viewport.left(), viewport.bottom() - mouse.y);
         }
 
-        self.resolution = egui::vec2(viewport.width(), viewport.height());
+        self.resolution = viewport.size();
     }
 
     pub fn to_iter(&self) -> impl Iterator<Item = (String, Vec<f32>)> {

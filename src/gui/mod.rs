@@ -9,7 +9,7 @@ use errors::Errors;
 mod tools;
 use tools::Tools;
 
-use super::{Canvas, Error};
+use super::{Error, Renderer};
 
 #[derive(Debug, Default)]
 pub struct Gui {
@@ -20,14 +20,14 @@ pub struct Gui {
 }
 
 impl Gui {
-    pub fn show(&mut self, ctx: &egui::Context, canvas: &mut Canvas) {
+    pub fn show(&mut self, ctx: &egui::Context, renderer: &mut Renderer) {
         if ctx.input(|i| i.key_pressed(egui::Key::L)) {
             self.live_mode = !self.live_mode;
         }
 
         if !self.live_mode {
-            self.bar.show(ctx, canvas);
-            self.tools.show(ctx, canvas);
+            self.bar.show(ctx, renderer);
+            self.tools.show(ctx, renderer);
             self.errors.show(ctx);
         }
     }

@@ -79,7 +79,9 @@ impl Shader {
                 let vertices = gl.create_vertex_array().map_err(Error::Gl)?;
 
                 if let Some((program, vertices)) = self.inner {
-                    tracing::debug!("Freed memory for cached program and vertices");
+                    tracing::trace!(
+                        "Freed memory for cached program {program:?} and vertices {vertices:?}"
+                    );
 
                     gl.delete_program(program);
                     gl.delete_vertex_array(vertices);
