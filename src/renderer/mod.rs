@@ -17,6 +17,7 @@ use crate::canvas::Canvas;
 pub struct Renderer {
     pub uniforms: Uniforms,
     pub shader: Option<Shader>,
+    pub buffer: Vec<u8>,
 
     pub size: egui::Vec2,
     pub resizable: bool,
@@ -75,7 +76,7 @@ impl Renderer {
         Canvas::new(texture, painter, viewport)
     }
 
-    fn render_to_buffer(&mut self, gl: &Rc<glow::Context>) -> Option<(egui::Vec2, Vec<u8>)> {
+    fn render_to_buffer(&mut self, gl: &Rc<glow::Context>) -> Option<egui::Vec2> {
         if let Some(shader) = &self.shader {
             let viewport = egui::Rect::from_x_y_ranges(0.0..=self.size.x, 0.0..=self.size.y);
             self.uniforms.update(viewport, None);
@@ -87,7 +88,10 @@ impl Renderer {
                     .expect("Unable to render shader")
             };
 
-            let mut pixels = vec![0; viewport.width() as usize * viewport.height() as usize * 4];
+            self.buffer.resize(
+                viewport.width() as usize * viewport.height() as usize * 4,
+                0,
+            );
 
             unsafe {
                 gl.bind_texture(glow::TEXTURE_2D, Some(*texture));
@@ -96,12 +100,12 @@ impl Renderer {
                     0,
                     glow::RGBA,
                     glow::UNSIGNED_BYTE,
-                    glow::PixelPackData::Slice(&mut pixels),
+                    glow::PixelPackData::Slice(&mut self.buffer),
                 );
                 gl.bind_texture(glow::TEXTURE_2D, None);
             };
 
-            Some((viewport.size(), pixels))
+            Some(viewport.size())
         } else {
             None
         }
@@ -118,7 +122,7 @@ impl Renderer {
 
     pub fn send(&mut self, gl: &Rc<glow::Context>) {
         if self.ndi.is_some() {
-            if let Some((size, mut pixels)) = self.render_to_buffer(gl) {
+            if let Some(size) = self.render_to_buffer(gl) {
                 if let Some(ndi) = &self.ndi {
                     ndi.send_video(&ndi::VideoData::from_buffer(
                         size.x as i32,
@@ -133,7 +137,7 @@ impl Renderer {
                             .as_secs() as i64,
                         0,
                         None,
-                        &mut pixels,
+                        &mut self.buffer,
                     ))
                 }
             }
