@@ -85,5 +85,7 @@ impl eframe::App for App {
             .show(ctx, |ui| {
                 self.renderer.render_to_canvas(gl, ui).paint();
             });
+
+        self.renderer.send(gl);
     }
 }

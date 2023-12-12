@@ -139,53 +139,51 @@ impl Shader {
         gl: &Rc<glow::Context>,
         uniforms: &Uniforms,
         size: egui::Vec2,
-    ) -> Result<Option<AllocGuard<glow::Texture>>, Error> {
-        if size.x < 1.0 || size.y < 1.0 {
-            Ok(None)
-        } else {
-            let texture = guard!(
-                gl,
-                gl.create_texture().map_err(Error::Gl)?,
-                move |texture| gl.delete_texture(texture)
-            );
+    ) -> Result<AllocGuard<glow::Texture>, Error> {
+        let texture = guard!(
+            gl,
+            gl.create_texture().map_err(Error::Gl)?,
+            move |texture| gl.delete_texture(texture)
+        );
 
-            gl.bind_texture(glow::TEXTURE_2D, Some(*texture));
-            gl.tex_image_2d(
-                glow::TEXTURE_2D,
-                0,
-                glow::RGBA as i32,
-                size.x as i32,
-                size.y as i32,
-                0,
-                glow::RGBA,
-                glow::UNSIGNED_BYTE,
-                None,
-            );
+        gl.bind_texture(glow::TEXTURE_2D, Some(*texture));
+        gl.tex_image_2d(
+            glow::TEXTURE_2D,
+            0,
+            glow::RGBA as i32,
+            size.x as i32,
+            size.y as i32,
+            0,
+            glow::RGBA,
+            glow::UNSIGNED_BYTE,
+            None,
+        );
 
-            let buffer = guard!(
-                gl,
-                gl.create_framebuffer().map_err(Error::Gl)?,
-                move |buffer| gl.delete_framebuffer(buffer)
-            );
+        let buffer = guard!(
+            gl,
+            gl.create_framebuffer().map_err(Error::Gl)?,
+            move |buffer| gl.delete_framebuffer(buffer)
+        );
 
-            gl.bind_framebuffer(glow::FRAMEBUFFER, Some(*buffer));
-            gl.framebuffer_texture_2d(
-                glow::FRAMEBUFFER,
-                glow::COLOR_ATTACHMENT0,
-                glow::TEXTURE_2D,
-                Some(*texture),
-                0,
-            );
-            gl.draw_buffer(glow::COLOR_ATTACHMENT0);
+        gl.bind_framebuffer(glow::FRAMEBUFFER, Some(*buffer));
+        gl.framebuffer_texture_2d(
+            glow::FRAMEBUFFER,
+            glow::COLOR_ATTACHMENT0,
+            glow::TEXTURE_2D,
+            Some(*texture),
+            0,
+        );
+        gl.draw_buffer(glow::COLOR_ATTACHMENT0);
 
-            assert!(gl.check_framebuffer_status(glow::FRAMEBUFFER) == glow::FRAMEBUFFER_COMPLETE);
+        assert!(gl.check_framebuffer_status(glow::FRAMEBUFFER) == glow::FRAMEBUFFER_COMPLETE);
 
-            self.render(gl, uniforms);
+        gl.viewport(0, 0, size.x as i32, size.y as i32);
 
-            gl.bind_framebuffer(glow::FRAMEBUFFER, None);
-            gl.bind_texture(glow::TEXTURE_2D, None);
+        self.render(gl, uniforms);
 
-            Ok(Some(texture))
-        }
+        gl.bind_framebuffer(glow::FRAMEBUFFER, None);
+        gl.bind_texture(glow::TEXTURE_2D, None);
+
+        Ok(texture)
     }
 }

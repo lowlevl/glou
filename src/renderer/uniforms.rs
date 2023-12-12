@@ -55,6 +55,8 @@ impl Uniforms {
 
         if let Some(mouse) = mouse {
             self.mouse = egui::vec2(mouse.x - viewport.left(), viewport.bottom() - mouse.y);
+        } else {
+            self.mouse = viewport.center() - viewport.min;
         }
 
         self.resolution = viewport.size();

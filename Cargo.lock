@@ -1205,6 +1205,7 @@ name = "glou"
 version = "0.0.0"
 dependencies = [
  "eframe",
+ "ndi",
  "rfd",
  "scopeguard",
  "strum",
@@ -1603,6 +1604,12 @@ dependencies = [
  "wasi",
  "windows-sys 0.48.0",
 ]
+
+[[package]]
+name = "ndi"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0561be8b8e69176572143be0c30c6c25a3bb93a026d501d53ec884fdc0f3988d"
 
 [[package]]
 name = "ndk"

@@ -30,13 +30,13 @@ impl Tools {
                                         ui.strong("Texture size");
                                         ui.add(
                                             egui::DragValue::new(&mut renderer.size.x)
-                                                .clamp_range(1..=3840)
+                                                .clamp_range(320..=3840)
                                                 .suffix(" px"),
                                         );
                                         ui.label("x");
                                         ui.add(
                                             egui::DragValue::new(&mut renderer.size.y)
-                                                .clamp_range(1..=2160)
+                                                .clamp_range(240..=2160)
                                                 .suffix(" px"),
                                         );
                                     });
@@ -54,21 +54,38 @@ impl Tools {
 
                             ui.label("Newtek NDI® Source");
 
+                            ui.horizontal(|ui| {
+                                ui.strong("Framerate");
+                                ui.add(
+                                    egui::DragValue::new(&mut renderer.ndi_framerate)
+                                        .clamp_range(24..=240)
+                                        .suffix(" fps"),
+                                );
+                            });
+
                             ui.vertical_centered_justified(|ui| {
                                 ui.add(
                                     egui::TextEdit::singleline(&mut renderer.ndi_name)
-                                        .hint_text("Name"),
+                                        .hint_text("Source name"),
                                 );
 
-                                if ui
-                                    .button(if renderer.ndi_enabled {
-                                        "⏹ Stop"
-                                    } else {
-                                        "▶ Start"
-                                    })
-                                    .clicked()
-                                {
-                                    renderer.ndi_enabled = !renderer.ndi_enabled;
+                                match &renderer.ndi {
+                                    Some(_ndi) => {
+                                        if ui.button("⏹ Stop").clicked() {
+                                            renderer.ndi = None;
+                                        }
+                                    }
+                                    None => {
+                                        if ui.button("▶ Start").clicked() {
+                                            renderer.ndi = Some(
+                                                ndi::SendBuilder::new()
+                                                    .ndi_name(renderer.ndi_name.clone())
+                                                    .clock_video(true)
+                                                    .build()
+                                                    .expect("Unable to create NDI device"),
+                                            );
+                                        }
+                                    }
                                 }
                             });
                         });
