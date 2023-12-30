@@ -7,15 +7,11 @@ use eframe::{
 
 use crate::{guard, AllocGuard};
 
-pub struct Canvas(Option<AllocGuard<glow::Texture>>, egui::Painter, egui::Rect);
+pub struct Canvas(Option<AllocGuard<glow::Texture>>, egui::Painter);
 
 impl Canvas {
-    pub fn new(
-        texture: Option<AllocGuard<glow::Texture>>,
-        painter: egui::Painter,
-        viewport: egui::Rect,
-    ) -> Self {
-        Self(texture, painter, viewport)
+    pub fn new(texture: Option<AllocGuard<glow::Texture>>, painter: egui::Painter) -> Self {
+        Self(texture, painter)
     }
 
     pub fn paint(mut self) {
@@ -24,7 +20,7 @@ impl Canvas {
             let texture = AllocGuard::into_inner(texture);
 
             self.1.add(egui::PaintCallback {
-                rect: self.2,
+                rect: self.1.clip_rect(),
                 callback: Arc::new(egui_glow::CallbackFn::new({
                     move |info, painter| unsafe {
                         let gl = painter.gl();
@@ -70,7 +66,7 @@ impl Canvas {
                             viewport.left_px + viewport.width_px,
                             viewport.from_bottom_px + viewport.height_px,
                             glow::COLOR_BUFFER_BIT,
-                            glow::LINEAR,
+                            glow::NEAREST,
                         );
 
                         painter.gl().bind_framebuffer(glow::READ_FRAMEBUFFER, None);

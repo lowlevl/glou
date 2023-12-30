@@ -43,11 +43,12 @@ impl std::fmt::Debug for Renderer {
 
 impl Renderer {
     pub fn render_to_canvas(&mut self, gl: &Rc<glow::Context>, ui: &mut egui::Ui) -> Canvas {
-        let (response, painter) = ui.allocate_painter(ui.available_size(), egui::Sense::hover());
+        let (response, painter) =
+            ui.allocate_painter(ui.available_size_before_wrap(), egui::Sense::hover());
         let viewport = egui::Rect {
             min: painter.round_pos_to_pixels(painter.clip_rect().min),
             max: painter.round_pos_to_pixels(painter.clip_rect().max),
-        };
+        } * painter.ctx().pixels_per_point();
 
         if !self.resizable {
             self.size = viewport.size();
@@ -73,7 +74,7 @@ impl Renderer {
             };
         }
 
-        Canvas::new(texture, painter, viewport)
+        Canvas::new(texture, painter)
     }
 
     fn render_to_buffer(&mut self, gl: &Rc<glow::Context>) -> Option<egui::Vec2> {
