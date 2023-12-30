@@ -22,7 +22,7 @@ pub struct Renderer {
     pub size: egui::Vec2,
     pub resizable: bool,
 
-    pub ndi: Option<ndi::Send>,
+    pub ndi: Option<nndi::send::Send>,
     pub ndi_name: String,
     pub ndi_framerate: u8,
 }
@@ -124,21 +124,21 @@ impl Renderer {
         if self.ndi.is_some() {
             if let Some(size) = self.render_to_buffer(gl) {
                 if let Some(ndi) = &self.ndi {
-                    ndi.send_video(&ndi::VideoData::from_buffer(
-                        size.x as i32,
-                        size.y as i32,
-                        ndi::FourCCVideoType::RGBA,
-                        self.ndi_framerate.into(),
-                        1,
-                        ndi::FrameFormatType::Progressive,
-                        time::SystemTime::now()
-                            .duration_since(time::UNIX_EPOCH)
-                            .expect("Time went backwards >.>")
-                            .as_secs() as i64,
-                        0,
-                        None,
-                        &mut self.buffer,
-                    ))
+                    //ndi.send_video(&ndi::VideoData::from_buffer(
+                    //    size.x as i32,
+                    //    size.y as i32,
+                    //    ndi::FourCCVideoType::RGBA,
+                    //    self.ndi_framerate.into(),
+                    //    1,
+                    //    ndi::FrameFormatType::Progressive,
+                    //    time::SystemTime::now()
+                    //        .duration_since(time::UNIX_EPOCH)
+                    //        .expect("Time went backwards >.>")
+                    //        .as_secs() as i64,
+                    //    0,
+                    //    None,
+                    //    &mut self.buffer,
+                    //))
                 }
             }
         }

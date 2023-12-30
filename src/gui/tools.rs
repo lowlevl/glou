@@ -78,11 +78,8 @@ impl Tools {
                                     None => {
                                         if ui.button("▶ Start").clicked() {
                                             renderer.ndi = Some(
-                                                ndi::SendBuilder::new()
-                                                    .ndi_name(renderer.ndi_name.clone())
-                                                    .clock_video(true)
-                                                    .build()
-                                                    .expect("Unable to create NDI device"),
+                                                nndi::send::Send::new(&renderer.ndi_name, None)
+                                                    .expect("Couldn't initialize NDI sender"),
                                             );
                                         }
                                     }

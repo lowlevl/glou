@@ -22,4 +22,4 @@ scopeguard = "1.2.0"
 
 eframe = "0.24.1"
 rfd = "0.12.1"
-ndi = "0.1.2"
+nndi = { path = "../nndi" }
